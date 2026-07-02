@@ -3,9 +3,9 @@
 #include <asio.hpp>
 #include <gtest/gtest.h>
 
-#include "protocol.h"
-#include "type.h"
-#include "utils/utils.h"
+#include "usbipdcpp/protocol.h"
+#include "usbipdcpp/type.h"
+#include "usbipdcpp/utils/utils.h"
 
 namespace usbipdcpp {
 namespace test {

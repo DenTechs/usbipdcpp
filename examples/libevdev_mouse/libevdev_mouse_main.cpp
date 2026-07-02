@@ -9,8 +9,8 @@
 #include <poll.h>
 #include <thread>
 
-#include "Server.h"
-#include "Session.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/Session.h"
 
 #include <libevdev/libevdev.h>
 

@@ -1,8 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/functional.h>
 #include <pybind11/stl.h>
-#include "virtual_device/devices/AbsoluteMouseHandler.h"
-#include "Interface.h"
+#include "usbipdcpp/virtual_device/devices/AbsoluteMouseHandler.h"
+#include "usbipdcpp/Interface.h"
 
 namespace py = pybind11;
 

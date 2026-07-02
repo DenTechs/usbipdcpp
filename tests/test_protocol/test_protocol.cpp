@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "protocol.h"
+#include "usbipdcpp/protocol.h"
 #include "test_utils.h"
-#include "DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
 
 #include <thread>
 

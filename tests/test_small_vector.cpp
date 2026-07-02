@@ -2,7 +2,7 @@
 #include <string>
 #include <utility>
 
-#include "utils/SmallVector.h"
+#include "usbipdcpp/utils/SmallVector.h"
 
 using namespace usbipdcpp;
 

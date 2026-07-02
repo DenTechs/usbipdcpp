@@ -1,12 +1,12 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/functional.h>
 #include <pybind11/stl.h>
-#include "DeviceHandler/DeviceHandler.h"
-#include "virtual_device/VirtualInterfaceHandler.h"
-#include "virtual_device/HidVirtualInterfaceHandler.h"
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
-#include "Interface.h"
-#include "Session.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/virtual_device/VirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/HidVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/Interface.h"
+#include "usbipdcpp/Session.h"
 
 namespace py = pybind11;
 

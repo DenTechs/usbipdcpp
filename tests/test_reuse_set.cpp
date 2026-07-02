@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "utils/ReuseSet.h"
+#include "usbipdcpp/utils/ReuseSet.h"
 
 using namespace usbipdcpp;
 

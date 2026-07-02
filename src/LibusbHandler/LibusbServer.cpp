@@ -1,10 +1,10 @@
-#include "LibusbHandler/LibusbServer.h"
+#include "usbipdcpp/LibusbHandler/LibusbServer.h"
 
 #include <iostream>
 
 
-#include "LibusbHandler/LibusbDeviceHandler.h"
-#include "LibusbHandler/tools.h"
+#include "usbipdcpp/LibusbHandler/LibusbDeviceHandler.h"
+#include "usbipdcpp/LibusbHandler/tools.h"
 
 using namespace usbipdcpp;
 

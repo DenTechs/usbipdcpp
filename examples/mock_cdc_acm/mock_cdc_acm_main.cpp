@@ -2,8 +2,8 @@
 
 #include "../example_utils.h"
 #include "mock_cdc_acm.h"
-#include "usbipdcpp_core.h"
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/usbipdcpp_core.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
 
 using namespace usbipdcpp;
 

@@ -1,8 +1,8 @@
-#include "Interface.h"
+#include "usbipdcpp/Interface.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "Endpoint.h"
-#include "virtual_device/VirtualInterfaceHandler.h"
+#include "usbipdcpp/Endpoint.h"
+#include "usbipdcpp/virtual_device/VirtualInterfaceHandler.h"
 
 namespace py = pybind11;
 

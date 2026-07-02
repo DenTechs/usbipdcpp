@@ -1,10 +1,10 @@
-#include "virtual_device/VirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/VirtualDeviceHandler.h"
 
-#include "Session.h"
-#include "constant.h"
-#include "protocol.h"
-#include "virtual_device/UvcConstants.h"
-#include "virtual_device/VirtualInterfaceHandler.h"
+#include "usbipdcpp/Session.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/protocol.h"
+#include "usbipdcpp/virtual_device/UvcConstants.h"
+#include "usbipdcpp/virtual_device/VirtualInterfaceHandler.h"
 
 using namespace usbipdcpp;
 

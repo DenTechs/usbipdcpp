@@ -1,10 +1,10 @@
 // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
-#include "virtual_device/storage_backends/StorageTransferOperator.h"
+#include "usbipdcpp/virtual_device/storage_backends/StorageTransferOperator.h"
 
 #include <spdlog/spdlog.h>
-#include "virtual_device/devices/MscBulkOnlyHandler.h"
-#include "virtual_device/storage_backends/StorageIoTransfer.h"
+#include "usbipdcpp/virtual_device/devices/MscBulkOnlyHandler.h"
+#include "usbipdcpp/virtual_device/storage_backends/StorageIoTransfer.h"
 
 using namespace usbipdcpp;
 

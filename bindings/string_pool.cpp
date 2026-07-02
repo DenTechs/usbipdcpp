@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "utils/StringPool.h"
+#include "usbipdcpp/utils/StringPool.h"
 
 namespace py = pybind11;
 

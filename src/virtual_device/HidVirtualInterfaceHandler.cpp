@@ -1,10 +1,10 @@
-#include "virtual_device/HidVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/HidVirtualInterfaceHandler.h"
 
 #include <algorithm>
 
-#include "Session.h"
-#include "constant.h"
-#include "protocol.h"
+#include "usbipdcpp/Session.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/protocol.h"
 
 // ========== 中断传输处理 ==========
 

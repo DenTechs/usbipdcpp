@@ -1,13 +1,13 @@
-#include "LibusbHandler/LibusbTransferOperator.h"
+#include "usbipdcpp/LibusbHandler/LibusbTransferOperator.h"
 
 #include <cstdlib>
 
 #include <asio.hpp>
 #include <libusb.h>
 
-#include "LibusbHandler/LibusbDeviceHandler.h"
-#include "constant.h"
-#include "utils/SmallVector.h"
+#include "usbipdcpp/LibusbHandler/LibusbDeviceHandler.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/utils/SmallVector.h"
 
 using namespace usbipdcpp;
 

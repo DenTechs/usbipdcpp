@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "SetupPacket.h"
-#include "constant.h"
+#include "usbipdcpp/SetupPacket.h"
+#include "usbipdcpp/constant.h"
 
 using namespace usbipdcpp;
 

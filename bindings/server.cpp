@@ -1,8 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/functional.h>
 #include <asio/ip/tcp.hpp>
-#include "Server.h"
-#include "Device.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/Device.h"
 
 namespace py = pybind11;
 

@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "virtual_device/CdcAcmVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/CdcAcmVirtualInterfaceHandler.h"
 
 
 /**

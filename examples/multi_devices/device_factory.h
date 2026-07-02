@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
-#include "Device.h"
-#include "utils/StringPool.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/utils/StringPool.h"
 
 /**
  * @brief 设备工厂类，用于创建虚拟USB设备

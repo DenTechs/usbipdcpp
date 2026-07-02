@@ -1,13 +1,13 @@
-#include "virtual_device/UvcVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/UvcVirtualInterfaceHandler.h"
 
 #include <algorithm>
 #include <cstring>
 
-#include "Device.h"
-#include "Session.h"
-#include "protocol.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/Session.h"
+#include "usbipdcpp/protocol.h"
 #include "spdlog/spdlog.h"
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
 
 namespace usbipdcpp {
 

@@ -1,12 +1,12 @@
-#include "protocol.h"
+#include "usbipdcpp/protocol.h"
 
 #include <filesystem>
 
 #include <asio.hpp>
 #include <spdlog/spdlog.h>
 #include <variant>
-#include "DeviceHandler/DeviceHandler.h"
-#include "utils/SmallVector.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/utils/SmallVector.h"
 
 
 using namespace usbipdcpp;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
-#include "virtual_device/HidVirtualInterfaceHandler.h"
-#include "protocol.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/HidVirtualInterfaceHandler.h"
+#include "usbipdcpp/protocol.h"
 
 #include <mutex>
 #include <thread>

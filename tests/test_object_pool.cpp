@@ -3,7 +3,7 @@
 #include <thread>
 #include <vector>
 
-#include "utils/ObjectPool.h"
+#include "usbipdcpp/utils/ObjectPool.h"
 
 using namespace usbipdcpp;
 
