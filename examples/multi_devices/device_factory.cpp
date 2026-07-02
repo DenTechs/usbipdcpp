@@ -4,8 +4,8 @@
 #include <format>
 #include <spdlog/spdlog.h>
 
-#include "Endpoint.h"
-#include "constant.h"
+#include "usbipdcpp/Endpoint.h"
+#include "usbipdcpp/constant.h"
 
 std::shared_ptr<usbipdcpp::UsbDevice> DeviceFactory::create_simple_device(int index,
                                                                           usbipdcpp::StringPool &string_pool) {

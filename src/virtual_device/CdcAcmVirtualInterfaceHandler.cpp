@@ -1,9 +1,9 @@
-#include "virtual_device/CdcAcmVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/CdcAcmVirtualInterfaceHandler.h"
 
-#include "DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
 
 #include <algorithm>
-#include "Session.h"
+#include "usbipdcpp/Session.h"
 
 namespace usbipdcpp {
 // ==================== CdcAcmCommunicationInterfaceHandler ====================

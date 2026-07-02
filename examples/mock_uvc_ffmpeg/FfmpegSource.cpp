@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "virtual_device/UvcConstants.h"
+#include "usbipdcpp/virtual_device/UvcConstants.h"
 
 namespace usbipdcpp {
 

@@ -2,10 +2,10 @@
 
 #include <asio.hpp>
 
-#include "DeviceHandler/DeviceHandler.h"
-#include "SetupPacket.h"
-#include "constant.h"
-#include "protocol.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/SetupPacket.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/protocol.h"
 
 using namespace usbipdcpp;
 

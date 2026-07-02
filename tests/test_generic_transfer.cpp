@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "protocol.h"
+#include "usbipdcpp/protocol.h"
 
 using namespace usbipdcpp;
 

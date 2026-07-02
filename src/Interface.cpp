@@ -1,4 +1,4 @@
-#include "Interface.h"
+#include "usbipdcpp/Interface.h"
 
 std::vector<std::uint8_t> usbipdcpp::UsbInterface::to_bytes() const {
     std::vector<std::uint8_t> result(4, 0);

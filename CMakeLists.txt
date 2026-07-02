@@ -128,7 +128,7 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC asio::asio)
 endif()
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
-target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>")
+target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 if(USBIPDCPP_FORCE_TRACK_PACKAGE)
     message(STATUS "USBIPDCPP: Force tracking package")
     target_compile_definitions(${PROJECT_NAME} PUBLIC USBIPDCPP_FORCE_TRACK_PACKAGE)
@@ -183,17 +183,17 @@ if (IS_TOP_LEVEL)
     # 安装头文件
     if(USBIPDCPP_BUILD_VIRTUAL_DEVICE)
         if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
-            install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+            install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
         else()
-            install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+            install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "LibusbHandler" EXCLUDE)
         endif()
     else()
         if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
-            install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+            install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "virtual_device" EXCLUDE)
         else()
-            install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+            install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "virtual_device" EXCLUDE
                     PATTERN "LibusbHandler" EXCLUDE)
         endif()

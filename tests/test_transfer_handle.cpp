@@ -4,9 +4,9 @@
 #include <thread>
 #include <vector>
 
-#include "protocol.h"
-#include "Device.h"
-#include "DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/protocol.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
 
 using namespace usbipdcpp;
 

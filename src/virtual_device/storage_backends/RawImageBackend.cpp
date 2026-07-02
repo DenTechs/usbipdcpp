@@ -12,7 +12,7 @@
 #endif
 // clang-format on
 
-#include "virtual_device/storage_backends/RawImageBackend.h"
+#include "usbipdcpp/virtual_device/storage_backends/RawImageBackend.h"
 
 #include <cstring>
 #include <filesystem>

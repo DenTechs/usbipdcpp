@@ -1,17 +1,17 @@
-#include "Session.h"
+#include "usbipdcpp/Session.h"
 
 #include <asio.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <variant>
 
-#include "DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
 
-#include "utils/utils.h"
-#include "Device.h"
-#include "Server.h"
-#include "network.h"
-#include "protocol.h"
+#include "usbipdcpp/utils/utils.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/network.h"
+#include "usbipdcpp/protocol.h"
 
 usbipdcpp::Session::Session(Server &server) : server(server), socket(session_io_context) {
 }

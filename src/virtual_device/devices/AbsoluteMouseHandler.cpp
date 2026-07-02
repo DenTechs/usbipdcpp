@@ -1,4 +1,4 @@
-#include "virtual_device/devices/AbsoluteMouseHandler.h"
+#include "usbipdcpp/virtual_device/devices/AbsoluteMouseHandler.h"
 
 #include <algorithm>
 #include <chrono>

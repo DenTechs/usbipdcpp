@@ -2,11 +2,11 @@
 
 #include "../example_utils.h"
 #include "FfmpegSource.h"
-#include "Device.h"
-#include "Server.h"
-#include "usbipdcpp_core.h"
-#include "virtual_device/UvcConstants.h"
-#include "virtual_device/UvcVirtualInterfaceHandler.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/usbipdcpp_core.h"
+#include "usbipdcpp/virtual_device/UvcConstants.h"
+#include "usbipdcpp/virtual_device/UvcVirtualInterfaceHandler.h"
 
 using namespace usbipdcpp;
 

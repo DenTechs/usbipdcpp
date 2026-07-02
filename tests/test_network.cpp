@@ -2,7 +2,7 @@
 
 #include "test_utils.h"
 
-#include "network.h"
+#include "usbipdcpp/network.h"
 
 using namespace usbipdcpp;
 using namespace usbipdcpp::test;

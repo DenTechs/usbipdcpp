@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "DeviceHandler/DeviceHandler.h"
-#include "protocol.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/protocol.h"
 #include "test_utils.h"
 
 using namespace usbipdcpp;

@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
-#include "virtual_device/HidVirtualInterfaceHandler.h"
-#include "Server.h"
-#include "Session.h"
-#include "protocol.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/HidVirtualInterfaceHandler.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/Session.h"
+#include "usbipdcpp/protocol.h"
 
 /**
  * @brief 简单的虚拟HID设备接口处理器

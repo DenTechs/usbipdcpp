@@ -8,9 +8,9 @@
 #include <thread>
 
 #include "../example_utils.h"
-#include "Server.h"
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
-#include "virtual_device/devices/AbsoluteMouseHandler.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/devices/AbsoluteMouseHandler.h"
 
 using namespace usbipdcpp;
 

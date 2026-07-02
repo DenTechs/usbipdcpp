@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "utils/ReuseMap.h"
+#include "usbipdcpp/utils/ReuseMap.h"
 
 using namespace usbipdcpp;
 

@@ -1,16 +1,16 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
 
-#include "virtual_device/devices/MscBulkOnlyHandler.h"
+#include "usbipdcpp/virtual_device/devices/MscBulkOnlyHandler.h"
 
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#include "Session.h"
-#include "SetupPacket.h"
-#include "constant.h"
-#include "virtual_device/VirtualDeviceHandler.h"
-#include "virtual_device/storage_backends/StorageTransferOperator.h"
+#include "usbipdcpp/Session.h"
+#include "usbipdcpp/SetupPacket.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/virtual_device/VirtualDeviceHandler.h"
+#include "usbipdcpp/virtual_device/storage_backends/StorageTransferOperator.h"
 
 using namespace usbipdcpp;
 

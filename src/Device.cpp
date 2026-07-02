@@ -1,8 +1,8 @@
-#include "Device.h"
+#include "usbipdcpp/Device.h"
 
 #include <ranges>
 
-#include "DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
 
 using namespace usbipdcpp;
 

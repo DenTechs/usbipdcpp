@@ -1,7 +1,7 @@
-#include "DeviceHandler/TransferOperator.h"
+#include "usbipdcpp/DeviceHandler/TransferOperator.h"
 
-#include "constant.h"
-#include "utils/SmallVector.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/utils/SmallVector.h"
 
 using namespace usbipdcpp;
 

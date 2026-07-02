@@ -11,7 +11,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include "virtual_device/video_sources/VideoSource.h"
+#include "usbipdcpp/virtual_device/video_sources/VideoSource.h"
 
 namespace usbipdcpp {
 

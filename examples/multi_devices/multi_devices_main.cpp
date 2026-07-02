@@ -2,8 +2,8 @@
 
 #include "../example_utils.h"
 #include "device_factory.h"
-#include "Server.h"
-#include "utils/StringPool.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/utils/StringPool.h"
 
 int main(int argc, char **argv) {
     auto opts = make_example_options("multi_devices", "USB/IP multi-device server");

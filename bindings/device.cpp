@@ -1,12 +1,12 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl/filesystem.h>
-#include "Device.h"
-#include "DeviceHandler/DeviceHandler.h"
-#include "Interface.h"
-#include "Endpoint.h"
-#include "constant.h"
-#include "Version.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/DeviceHandler/DeviceHandler.h"
+#include "usbipdcpp/Interface.h"
+#include "usbipdcpp/Endpoint.h"
+#include "usbipdcpp/constant.h"
+#include "usbipdcpp/Version.h"
 
 namespace py = pybind11;
 

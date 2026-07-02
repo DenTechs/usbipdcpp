@@ -2,10 +2,10 @@
 
 #include "../example_utils.h"
 
-#include "virtual_device/devices/MscBulkOnlyHandler.h"
-#include "virtual_device/storage_backends/RawImageBackend.h"
-#include "virtual_device/SimpleVirtualDeviceHandler.h"
-#include "usbipdcpp_core.h"
+#include "usbipdcpp/virtual_device/devices/MscBulkOnlyHandler.h"
+#include "usbipdcpp/virtual_device/storage_backends/RawImageBackend.h"
+#include "usbipdcpp/virtual_device/SimpleVirtualDeviceHandler.h"
+#include "usbipdcpp/usbipdcpp_core.h"
 
 using namespace usbipdcpp;
 

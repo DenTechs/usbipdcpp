@@ -1,4 +1,4 @@
-#include "Server.h"
+#include "usbipdcpp/Server.h"
 
 #include <thread>
 #include <iostream>
@@ -9,10 +9,10 @@
 #include <asio/use_awaitable.hpp>
 #include <spdlog/spdlog.h>
 
-#include "../include/utils/utils.h"
-#include "protocol.h"
-#include "type.h"
-#include "Session.h"
+#include "usbipdcpp/utils/utils.h"
+#include "usbipdcpp/protocol.h"
+#include "usbipdcpp/type.h"
+#include "usbipdcpp/Session.h"
 
 usbipdcpp::Server::Server(const ServerNetworkConfig &network_config) :
     network_config(std::move(network_config)) {

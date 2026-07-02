@@ -1,9 +1,9 @@
 // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
-#include "virtual_device/VirtualDeviceTransferOperator.h"
+#include "usbipdcpp/virtual_device/VirtualDeviceTransferOperator.h"
 
 #include <spdlog/spdlog.h>
-#include "constant.h"
+#include "usbipdcpp/constant.h"
 
 using namespace usbipdcpp;
 

@@ -1,12 +1,12 @@
 #include <iostream>
 
 #include "../example_utils.h"
-#include "Device.h"
-#include "Server.h"
-#include "usbipdcpp_core.h"
-#include "virtual_device/UvcConstants.h"
-#include "virtual_device/UvcVirtualInterfaceHandler.h"
-#include "virtual_device/video_sources/ColorBarSource.h"
+#include "usbipdcpp/Device.h"
+#include "usbipdcpp/Server.h"
+#include "usbipdcpp/usbipdcpp_core.h"
+#include "usbipdcpp/virtual_device/UvcConstants.h"
+#include "usbipdcpp/virtual_device/UvcVirtualInterfaceHandler.h"
+#include "usbipdcpp/virtual_device/video_sources/ColorBarSource.h"
 
 using namespace usbipdcpp;
 
