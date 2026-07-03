@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <spdlog/spdlog.h>
 
 #include "usbipdcpp/LibusbHandler/LibusbDeviceHandler.h"
 #include "usbipdcpp/LibusbHandler/tools.h"

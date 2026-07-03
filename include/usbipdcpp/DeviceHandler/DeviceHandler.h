@@ -3,15 +3,9 @@
 #include <cstdint>
 #include <mutex>
 #include <optional>
-#include <spdlog/spdlog.h>
-#include <system_error>
-#include <vector>
-
-#include <asio.hpp>
 
 #include "usbipdcpp/Device.h"
 #include "usbipdcpp/DeviceHandler/TransferOperator.h"
-#include "usbipdcpp/protocol.h"
 #include "usbipdcpp/type.h"
 
 

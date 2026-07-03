@@ -3,7 +3,6 @@
 #include <string>
 #include <format>
 
-#include <spdlog/spdlog.h>
 #include <libusb-1.0/libusb.h>
 #include "usbipdcpp/constant.h"
 #include "usbipdcpp/Export.h"
@@ -30,15 +29,3 @@ inline std::string get_device_busid(libusb_device *device) {
 
 USBIPDCPP_API UsbSpeed libusb_speed_to_usb_speed(int speed);
 }
-
-
-#define dev_pfmt(dev, fmt) "dev {}: " fmt, ::usbipdcpp::get_device_busid((dev))
-
-#define dev_info(dev,fmt,...) \
-SPDLOG_INFO(dev_pfmt((dev),fmt) ,##__VA_ARGS__)
-#define dev_dbg(dev,fmt,...) \
-SPDLOG_DEBUG(dev_pfmt((dev),fmt) ,##__VA_ARGS__)
-#define dev_warn(dev,fmt,...) \
-SPDLOG_WARN(dev_pfmt((dev),fmt) ,##__VA_ARGS__)
-#define dev_err(dev,fmt,...) \
-SPDLOG_ERROR(dev_pfmt((dev),fmt) ,##__VA_ARGS__)

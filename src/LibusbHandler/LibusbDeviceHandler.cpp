@@ -1,5 +1,6 @@
 #include "usbipdcpp/LibusbHandler/LibusbDeviceHandler.h"
 
+#include <spdlog/spdlog.h>
 
 #include "usbipdcpp/Endpoint.h"
 #include "usbipdcpp/LibusbHandler/LibusbTransferOperator.h"
@@ -482,7 +483,8 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
             break;
         case LIBUSB_TRANSFER_ERROR:
             if (!(trx->flags & LIBUSB_TRANSFER_SHORT_NOT_OK)) {
-                dev_err(libusb_get_device(trx->dev_handle), "error on endpoint {}", trx->endpoint);
+                SPDLOG_ERROR("dev {}: error on endpoint {}", get_device_busid(libusb_get_device(trx->dev_handle)),
+                             trx->endpoint);
             }
             else {
                 // Tweaking status to complete as we received data, but all
@@ -490,18 +492,21 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
             }
             break;
         case LIBUSB_TRANSFER_CANCELLED:
-            dev_info(libusb_get_device(trx->dev_handle), "unlinked by a call to usb_unlink_urb()");
+            SPDLOG_INFO("dev {}: unlinked by a call to usb_unlink_urb()",
+                        get_device_busid(libusb_get_device(trx->dev_handle)));
             break;
         case LIBUSB_TRANSFER_STALL:
-            dev_err(libusb_get_device(trx->dev_handle), "endpoint {} is stalled", trx->endpoint);
+            SPDLOG_ERROR("dev {}: endpoint {} is stalled",
+                         get_device_busid(libusb_get_device(trx->dev_handle)), trx->endpoint);
             break;
         case LIBUSB_TRANSFER_NO_DEVICE:
-            dev_info(libusb_get_device(trx->dev_handle), "device removed?");
+            SPDLOG_INFO("dev {}: device removed?", get_device_busid(libusb_get_device(trx->dev_handle)));
             callback_arg.handler->device_removed = true;
             break;
         default:
-            dev_warn(libusb_get_device(trx->dev_handle), "urb completion with unknown status {}",
-                     static_cast<int>(trx->status));
+            SPDLOG_WARN("dev {}: urb completion with unknown status {}",
+                        get_device_busid(libusb_get_device(trx->dev_handle)),
+                        static_cast<int>(trx->status));
             break;
     }
     SPDLOG_DEBUG("libusb传输了{}个字节", trx->actual_length);
