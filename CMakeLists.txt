@@ -255,10 +255,15 @@ if (IS_TOP_LEVEL)
     )
 
     if(WIN32)
-        # 安装编译输出中所有 DLL（含 vcpkg 依赖）到 bin 目录
-        # 用双引号：CMAKE_INSTALL_BINDIR 在配置期展开，CMAKE_INSTALL_PREFIX 在安装期展开
+        # 安装构建目录中 DLL（含 vcpkg 依赖）到 bin 目录
+        # 双引号块内 CMAKE_INSTALL_BINDIR 在配置期展开，其余变量安装期展开
         install(CODE "
-            file(GLOB_RECURSE dlls \"${CMAKE_BINARY_DIR}/*.dll\")
+            # 多配置生成器（VS）DLL 在 build/<Config>/ 下，单配置生成器在 build/ 根目录
+            if(CMAKE_CONFIGURATION_TYPES)
+                file(GLOB dlls \"${CMAKE_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/*.dll\")
+            else()
+                file(GLOB dlls \"${CMAKE_BINARY_DIR}/*.dll\")
+            endif()
             if(dlls)
                 list(FILTER dlls EXCLUDE REGEX \"/usbipdcpp[^/]*\\\\.dll$\")
                 if(dlls)
