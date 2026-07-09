@@ -295,8 +295,13 @@ int usbipdcpp::LibusbDeviceHandler::tweak_clear_halt_cmd(const SetupPacket &setu
     else {
         SPDLOG_DEBUG("libusb_clear_halt() done: endp {}", target_endp);
     }
-    return err; // 返回 0 表示成功，正数表示错误
+    // 返回 libusb 错误码（0=成功，负=错误）。
+    // caller 中 tweak_ret < 0 视为"未处理，提交 transfer 让设备自行处理"，
+    // tweak_ret == 0 视为"已处理，无需提交 transfer"。
+    // 因此 tweak 失败时会 fall through 到正常 transfer 提交，作为降级策略。
+    return err;
 }
+
 
 int usbipdcpp::LibusbDeviceHandler::tweak_set_interface_cmd(const SetupPacket &setup_packet) {
     uint16_t alternate = setup_packet.value;
@@ -322,8 +327,13 @@ int usbipdcpp::LibusbDeviceHandler::tweak_set_interface_cmd(const SetupPacket &s
             }
         }
     }
-    return err; // 返回 0 表示成功，正数表示错误
+    // 返回 libusb 错误码（0=成功，负=错误）。
+    // caller 中 tweak_ret < 0 视为"未处理，提交 transfer 让设备自行处理"，
+    // tweak_ret == 0 视为"已处理，无需提交 transfer"。
+    // 因此 tweak 失败时会 fall through 到正常 transfer 提交，作为降级策略。
+    return err;
 }
+
 
 int usbipdcpp::LibusbDeviceHandler::tweak_set_configuration_cmd(const SetupPacket &setup_packet) {
     SPDLOG_INFO("tweak_set_configuration_cmd");
@@ -360,9 +370,8 @@ int usbipdcpp::LibusbDeviceHandler::tweak_reset_device_cmd(const SetupPacket &se
 
 int usbipdcpp::LibusbDeviceHandler::tweak_special_requests(const SetupPacket &setup_packet) {
     // 返回值：
-    // -1: 不需要 tweak，应该提交 transfer
-    //  0: tweak 成功，不需要提交 transfer
-    // >0: tweak 失败（libusb 错误码），不需要提交 transfer
+    // 负数: 未处理（不需要 tweak 或 tweak 执行失败），caller 正常提交 transfer
+    //  0: tweak 已成功处理，无需提交 transfer
     // 特殊请求较少见，大多数情况返回 -1（不需要 tweak）
     if (setup_packet.is_clear_halt_cmd()) [[unlikely]] {
         return tweak_clear_halt_cmd(setup_packet);
