@@ -195,6 +195,8 @@ void usbipdcpp::Session::immediately_stop() {
 
     std::error_code ignore_ec;
     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);
+    // 唤醒 sender 线程，否则它卡在 data_available_cv.wait() 上直到 receiver 退出。
+    data_available_cv.notify_one();
     SPDLOG_INFO("成功调用shutdown");
 }
 
