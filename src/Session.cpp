@@ -408,7 +408,11 @@ void usbipdcpp::Session::sender(usbipdcpp::error_code &ec) {
                 send_data);
 
         if (sending_ec) {
-            // 直接不处理发送过程中的错误
+            // TCP 写入失败，立即关闭 session 双向通信。
+            // 仅 break 退出 sender 会让 receiver 继续运行直到 keepalive 超时。
+            should_immediately_stop = true;
+            std::error_code ignore_ec;
+            socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);
             // ec = sending_ec;
             break;
         }
