@@ -1,7 +1,7 @@
 #pragma once
 
-#include <functional>
 #include <asio.hpp>
+#include <functional>
 #include <libusb-1.0/libusb.h>
 
 #include "usbipdcpp/Server.h"
@@ -12,13 +12,22 @@ namespace usbipdcpp {
  * @brief Result of device bind/unbind operations.
  */
 enum class DeviceOperationResult {
-    Success,                ///< Operation completed successfully
-    DeviceNotFound,         ///< Device was not found in the device list
-    DeviceInUse,            ///< Device is currently in use and cannot be modified
-    DeviceOpenFailed,       ///< Failed to open the device
-    GetDescriptorFailed,    ///< Failed to get device descriptor
-    GetConfigFailed,        ///< Failed to get configuration descriptor
-    ClaimInterfaceFailed    ///< Failed to claim interface
+    Success, ///< Operation completed successfully
+    DeviceNotFound, ///< Device was not found in the device list
+    DeviceInUse, ///< Device is currently in use and cannot be modified
+    DeviceOpenFailed, ///< Failed to open the device
+    GetDescriptorFailed, ///< Failed to get device descriptor
+    GetConfigFailed, ///< Failed to get configuration descriptor
+    ClaimInterfaceFailed, ///< Failed to claim interface
+    HubFiltered ///< Hub device skipped by filter
+};
+
+/**
+ * @brief LibusbServer 行为配置
+ */
+struct LibusbServerConfig {
+    bool skip_hub = true; ///< 跳过 hub 设备（bDeviceClass == 0x09）
+    bool auto_bind_hotplug = false; ///< 热插拔时自动绑定新设备
 };
 
 /**
@@ -34,7 +43,11 @@ enum class DeviceOperationResult {
  */
 class USBIPDCPP_API LibusbServer {
 public:
-    LibusbServer();
+    explicit LibusbServer(const LibusbServerConfig &config = {});
+    LibusbServer(const LibusbServer &) = delete;
+    LibusbServer(LibusbServer &&) = delete;
+    LibusbServer &operator=(const LibusbServer &) = delete;
+    LibusbServer &operator=(LibusbServer &&) = delete;
 
     /**
      * @brief Bind a physical USB device to make it available for export (普通模式).
@@ -153,10 +166,12 @@ public:
      * Also shows whether the device is exported, available, or unbound.
      *
      * @param dev The libusb device to print information about.
+     * @param skip_name Skip device name lookup (avoids calling get_device_names which may
+     *                  block on libusb_open). When true, VID:PID is printed instead.
      *
      * @thread_safety 内部加锁读取设备状态，任意线程安全。
      */
-    void print_device(libusb_device *dev);
+    void print_device(libusb_device *dev, bool skip_name = false);
 
     /**
      * @brief List all USB devices connected to the host.
@@ -166,6 +181,14 @@ public:
      * @thread_safety 使用 libusb 全局设备列表（libusb_get_device_list），任意线程安全。
      */
     void list_host_devices();
+
+    /**
+     * @brief 扫描并绑定所有当前连接的设备。
+     *
+     * 根据 config.skip_hub 自动跳过 hub 设备。
+     * 已绑定或在用的设备也会跳过。可在任意线程调用。
+     */
+    void bind_existing_devices();
 
     /**
      * @brief Get the underlying Server instance.
@@ -180,6 +203,11 @@ public:
 
     /**
      * @brief Get the manufacturer and product names of a USB device.
+     *
+     * @warning This function calls libusb_open() which is blocking I/O. Avoid calling it
+     *          from the libusb event thread (e.g. hotplug callback) or performance-critical
+     *          paths. On platforms with a shared USB/Ethernet bus (e.g. Raspberry Pi 3B),
+     *          concurrent libusb_open calls may cause network drops.
      *
      * @param device The libusb device to get names from.
      * @return A pair containing {manufacturer, product} names. Returns "Unknown Manufacturer"
@@ -230,13 +258,15 @@ protected:
 
     std::atomic<bool> should_exit_libusb_event_thread = false;
 
-    //不可在这个线程发送网络包
+    // 不可在这个线程发送网络包
     std::thread libusb_event_thread;
 
     // 热插拔相关
     libusb_hotplug_callback_handle hotplug_handle_ = 0;
     bool hotplug_enabled_ = false;
-    bool hotplug_enabled_by_user_ = true;  // 用户设置的开关，默认启用
+    bool hotplug_enabled_by_user_ = true; // 用户设置的开关，默认启用
+
+    LibusbServerConfig config;
 
     void start_hotplug_monitor();
     void stop_hotplug_monitor();
@@ -244,10 +274,7 @@ protected:
     void handle_device_arrived(libusb_device *device);
     void handle_device_left(const std::string &busid);
 
-    static int LIBUSB_CALL hotplug_callback(
-        libusb_context *ctx,
-        libusb_device *device,
-        libusb_hotplug_event event,
-        void *user_data);
+    static int LIBUSB_CALL hotplug_callback(libusb_context *ctx, libusb_device *device, libusb_hotplug_event event,
+                                            void *user_data);
 };
-}
+} // namespace usbipdcpp

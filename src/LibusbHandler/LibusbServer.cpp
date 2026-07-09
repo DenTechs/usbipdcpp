@@ -33,7 +33,7 @@ void log_device_state(Server &server) {
 }
 } // namespace
 
-LibusbServer::LibusbServer() {
+LibusbServer::LibusbServer(const LibusbServerConfig& config) : config(config) {
     server.register_session_exit_callback([this]() {
         std::lock_guard lock(server.get_devices_mutex());
         auto &server_available_devices = server.get_available_devices();
@@ -54,7 +54,7 @@ LibusbServer::LibusbServer() {
 
 std::pair<std::string, std::string> LibusbServer::get_device_names(libusb_device *device) {
     libusb_device_handle *handle = nullptr;
-    libusb_device_descriptor desc;
+    libusb_device_descriptor desc{};
     int ret = libusb_get_device_descriptor(device, &desc);
     if (ret < 0) {
         return {"Unknown", "Unknown"};
@@ -81,7 +81,7 @@ std::pair<std::string, std::string> LibusbServer::get_device_names(libusb_device
     return {(manufacturer[0] ? manufacturer : "Unknown Manufacturer"), (product[0] ? product : "Unknown Product")};
 }
 
-void LibusbServer::print_device(libusb_device *dev) {
+void LibusbServer::print_device(libusb_device *dev, bool skip_name) {
     libusb_device_descriptor desc{};
     // 获取设备描述符
     auto err = libusb_get_device_descriptor(dev, &desc);
@@ -90,7 +90,13 @@ void LibusbServer::print_device(libusb_device *dev) {
         return;
     }
     // 打印设备信息
-    auto device_name = get_device_names(dev);
+    std::string device_name;
+    if (skip_name) {
+        device_name = std::format("{:04x}:{:04x}", desc.idVendor, desc.idProduct);
+    } else {
+        auto [mfr, product] = get_device_names(dev);
+        device_name = std::format("{}-{}", mfr, product);
+    }
     auto busid = get_device_busid(dev);
     bool is_used = false;
     bool is_available = false;
@@ -101,13 +107,13 @@ void LibusbServer::print_device(libusb_device *dev) {
         if (server_using_devices.contains(busid)) {
             is_used = true;
         }
-        for (auto it = server_available_devices.begin(); it != server_available_devices.end(); ++it) {
-            if ((*it)->busid == busid) {
+        for (auto & server_available_device : server_available_devices) {
+            if (server_available_device->busid == busid) {
                 is_available = true;
             }
         }
     }
-    std::cout << std::format("Device name: {}-{} ({})", device_name.first, device_name.second,
+    std::cout << std::format("Device name: {} ({})", device_name,
                              is_used ? "exported" : (is_available ? "available" : "unbinded"))
               << std::endl;
     std::cout << std::format("busid: {}", busid) << std::endl;
@@ -144,6 +150,12 @@ void LibusbServer::list_host_devices() {
     libusb_device **devs;
     auto dev_nums = libusb_get_device_list(nullptr, &devs);
     for (auto dev_i = 0; dev_i < dev_nums; dev_i++) {
+        if (config.skip_hub) {
+            libusb_device_descriptor desc{};
+            if (libusb_get_device_descriptor(devs[dev_i], &desc) == 0 &&
+                desc.bDeviceClass == LIBUSB_CLASS_HUB)
+                continue;
+        }
         print_device(devs[dev_i]);
         std::cout << std::endl;
     }
@@ -177,6 +189,13 @@ DeviceOperationResult LibusbServer::bind_host_device(libusb_device *dev) {
         SPDLOG_WARN("无法获取设备描述符：{}", libusb_strerror(err));
         libusb_unref_device(dev);
         return DeviceOperationResult::GetDescriptorFailed;
+    }
+
+    // 跳过 hub 设备（bDeviceClass == 0x09），hub 对 USB/IP 无意义
+    if (config.skip_hub && device_descriptor.bDeviceClass == LIBUSB_CLASS_HUB) {
+        SPDLOG_DEBUG("跳过 hub 设备: busid={}", get_device_busid(dev));
+        libusb_unref_device(dev);
+        return DeviceOperationResult::HubFiltered;
     }
 
     // 获取配置描述符
@@ -599,9 +618,23 @@ void LibusbServer::handle_device_arrived(libusb_device *device) {
         }
     }
 
-    // 打印设备信息
+    // 打印设备信息（自动绑定时跳过设备名查询，避免在事件线程上调 libusb_open）
     SPDLOG_INFO("检测到新设备插入:");
-    print_device(device);
+    print_device(device, config.auto_bind_hotplug);
+
+    // 如果启用了热插拔自动绑定，自动绑定新设备
+    if (config.auto_bind_hotplug) {
+        SPDLOG_INFO("自动绑定新设备: {}", busid);
+        libusb_ref_device(device); // bind_host_device 会接管引用
+        auto result = bind_host_device(device);
+        if (result == DeviceOperationResult::Success) {
+            SPDLOG_INFO("自动绑定成功: {}", busid);
+        } else if (result == DeviceOperationResult::HubFiltered) {
+            SPDLOG_DEBUG("新设备 {} 为 hub，跳过", busid);
+        } else {
+            SPDLOG_WARN("自动绑定失败: {}", busid);
+        }
+    }
 }
 
 void LibusbServer::handle_device_left(const std::string &busid) {
@@ -641,6 +674,39 @@ void LibusbServer::handle_device_left(const std::string &busid) {
             handler->trigger_session_stop();
         }
     }
+}
+
+void LibusbServer::bind_existing_devices() {
+    libusb_device **devs = nullptr;
+    ssize_t dev_nums = libusb_get_device_list(nullptr, &devs);
+    if (dev_nums < 0) {
+        SPDLOG_ERROR("libusb_get_device_list 失败: {}", libusb_strerror(static_cast<int>(dev_nums)));
+        return;
+    }
+    int bound = 0, skipped = 0;
+    for (ssize_t i = 0; i < dev_nums; i++) {
+        auto busid = get_device_busid(devs[i]);
+        // 跳过已绑定或在用的设备
+        {
+            std::shared_lock lock(server.get_devices_mutex());
+            bool already_known = server.get_using_devices().contains(busid);
+            if (!already_known) {
+                for (const auto &d : server.get_available_devices()) {
+                    if (d->busid == busid) { already_known = true; break; }
+                }
+            }
+            if (already_known) continue;
+        }
+        libusb_ref_device(devs[i]); // bind_host_device 接管引用
+        auto result = bind_host_device(devs[i]);
+        switch (result) {
+            case DeviceOperationResult::Success: bound++; break;
+            case DeviceOperationResult::HubFiltered: skipped++; break;
+            default: break;
+        }
+    }
+    libusb_free_device_list(devs, 0); // bind_host_device 已接管或释放各设备引用
+    SPDLOG_INFO("扫描绑定完成: {} 个绑定, {} 个 hub 跳过", bound, skipped);
 }
 
 void LibusbServer::start(asio::ip::tcp::endpoint &ep) {
