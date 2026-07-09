@@ -491,13 +491,15 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
             /* OK */
             break;
         case LIBUSB_TRANSFER_ERROR:
+            // SHORT_NOT_OK 未设置：调用者接受短包，SHORT_NOT_OK 报告 ERROR 是正常的；
+            //   实际数据已收到，视为完成以正确转发 actual_length。
+            // SHORT_NOT_OK 已设置：调用者明确要求完整长度，这是真正的传输错误。
             if (!(trx->flags & LIBUSB_TRANSFER_SHORT_NOT_OK)) {
-                SPDLOG_ERROR("dev {}: error on endpoint {}", get_device_busid(libusb_get_device(trx->dev_handle)),
-                             trx->endpoint);
+                trx->status = LIBUSB_TRANSFER_COMPLETED;
             }
             else {
-                // Tweaking status to complete as we received data, but all
-                trx->status = LIBUSB_TRANSFER_COMPLETED;
+                SPDLOG_ERROR("dev {}: error on endpoint {}", get_device_busid(libusb_get_device(trx->dev_handle)),
+                             trx->endpoint);
             }
             break;
         case LIBUSB_TRANSFER_CANCELLED:
