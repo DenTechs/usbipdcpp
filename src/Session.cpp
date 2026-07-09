@@ -311,11 +311,11 @@ void usbipdcpp::Session::receiver(usbipdcpp::error_code &receiver_ec) {
                         }
                         else {
                             SPDLOG_WARN("找不到端点{}", real_ep);
-                            UsbIpResponse::UsbIpRetSubmit ret_submit =
+                            // 通过 sender 队列发送，避免 receiver 和 sender 两个线程
+                            // 并发写同一 TCP socket 导致数据流损坏。
+                            submit_ret_submit(
                                     UsbIpResponse::UsbIpRetSubmit::create_ret_submit_epipe_without_data(
-                                            cmd2.header.seqnum, 0);
-                            ret_submit.to_socket(socket, ec);
-                            SPDLOG_TRACE("成功发送 UsbIpRetSubmit 包");
+                                            cmd2.header.seqnum, 0));
                         }
                     }
                     else if constexpr (std::is_same_v<UsbIpCommand::UsbIpCmdUnlink, T>) {
