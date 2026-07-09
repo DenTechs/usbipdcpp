@@ -475,12 +475,13 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
         auto *handler = callback_arg.handler;
         handler->transfers_mutex_.lock();
         handler->transfers_.erase(callback_arg.seqnum);
-        handler->pending_count_.fetch_sub(1, std::memory_order_release);
         handler->transfers_mutex_.unlock();
         callback_arg.transfer.reset(); // 释放 libusb_transfer，避免延后到下次 alloc
         if (!handler->callback_args_pool_.free(&callback_arg)) {
             delete &callback_arg;
         }
+        // pending_count_ 在所有清理完成后递减，与正常路径保持一致。
+        handler->pending_count_.fetch_sub(1, std::memory_order_release);
         handler->transfer_complete_cv_.notify_one();
         return;
     }
@@ -545,7 +546,6 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
         unlinking = callback_arg.unlinking;
         unlink_cmd_seqnum = callback_arg.unlink_cmd_seqnum;
         handler->transfers_.erase(callback_arg.seqnum);
-        handler->pending_count_.fetch_sub(1, std::memory_order_release);
 
         if (unlinking) [[unlikely]] {
             // URB 被 unlink 取消，入队 RET_UNLINK（带实际传输状态码）
@@ -593,6 +593,9 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
     if (!handler->callback_args_pool_.free(&callback_arg)) {
         delete &callback_arg;
     }
+    // pending_count_ 在完成所有操作后递减，确保 on_disconnection 的 CV 等待
+    // 不会在 callback 仍使用 session/pool 时被唤醒。
+    handler->pending_count_.fetch_sub(1, std::memory_order_release);
     // 无条件通知，覆盖正常路径与 on_disconnection 的竞态。
     // CV 谓词 pending_count_==0 确保只有最后一个 callback 真正唤醒 wait。
     handler->transfer_complete_cv_.notify_one();
