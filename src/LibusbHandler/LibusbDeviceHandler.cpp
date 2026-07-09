@@ -730,25 +730,23 @@ void usbipdcpp::LibusbDeviceHandler::release_and_close_device() {
         return;
     }
 
-    // 获取设备以查询接口数量
-    libusb_device *device = libusb_get_device(native_handle);
-    struct libusb_config_descriptor *active_config_desc = nullptr;
-    int num_interfaces = 0;
-    if (device && libusb_get_active_config_descriptor(device, &active_config_desc) == 0) {
-        num_interfaces = active_config_desc->bNumInterfaces;
-        libusb_free_config_descriptor(active_config_desc);
-    }
+    // 使用绑定时已缓存的接口数量，不要反查 libusb 配置描述符。
+    // 设备物理拔出后 libusb_get_active_config_descriptor 会失败返回 0，
+    // 导致释放循环被跳过，内核驱动永远无法重新挂载。
+    const int num_interfaces = static_cast<int>(handle_device.interfaces.size());
 
     // 释放所有接口
     for (int intf_i = 0; intf_i < num_interfaces; intf_i++) {
         int err = libusb_release_interface(native_handle, intf_i);
-        if (err) {
+        // LIBUSB_ERROR_NO_DEVICE：设备已物理拔出，内核在 handle 关闭时自动重挂载驱动，静默忽略。
+        if (err && err != LIBUSB_ERROR_NO_DEVICE) {
             SPDLOG_ERROR("释放接口 {} 时出错: {}", intf_i, libusb_strerror(err));
         }
 
         // 重新绑定内核驱动
         err = libusb_attach_kernel_driver(native_handle, intf_i);
-        if (err && err != LIBUSB_ERROR_NOT_FOUND && err != LIBUSB_ERROR_NOT_SUPPORTED) {
+        if (err && err != LIBUSB_ERROR_NOT_FOUND && err != LIBUSB_ERROR_NOT_SUPPORTED
+                && err != LIBUSB_ERROR_NO_DEVICE) {
             SPDLOG_WARN("重新绑定内核驱动失败 (接口 {}): {}", intf_i, libusb_strerror(err));
         }
     }
