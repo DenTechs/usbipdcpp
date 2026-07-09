@@ -158,8 +158,7 @@ AbstDeviceHandler
 
 ### 代码说明
 
-> 📝 注释和日志主要使用中文，代码结构清晰易读  
-> 欢迎提交英文翻译的 PR！
+> 📝 **语言说明**：公开 API 文档（doxygen）和运行时消息使用**英语**。内部实现注释可使用**中文或英语**——这是项目中仅允许的两种语言，其他语言的 PR 不予接受。
 
 ### 扩展功能
 
@@ -314,6 +313,18 @@ interface_handler->change_string_interface(L"我的 HID 接口");
    使用：`mock_uvc_ffmpeg --video video.mp4`（添加 `--passthrough` 启用 MJPEG/H264 透传）
 
    需要 FFmpeg 库（libavformat、libavcodec、libswscale、libavutil）。
+
+13. multi_interface_hid
+
+   复合 USB 设备示例，在单个设备上同时实现**两个 HID 接口**（鼠标 + 键盘）。
+   展示如何使用 `SimpleVirtualDeviceHandler` 创建多接口虚拟设备。
+
+14. libusb_windows_service
+
+   将 libusb 服务器包装为 **Windows 服务**（仅 Windows）。使用 Windows SCM API 运行
+   `LibusbServer`，支持完整的服务生命周期管理（通过 `net start`/`net stop` 或
+   `sc.exe` 启停）。支持启动时自动绑定所有已连接的 USB 设备。
+
 ---
 
 ## 编译安装
