@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(usbipdcpp VERSION 1.0.6)
+project(usbipdcpp VERSION 1.0.7)
 
 set(CMAKE_CXX_STANDARD 23)
 
@@ -51,6 +51,18 @@ option(USBIPDCPP_BUILD_EXAMPLE_MULTI_DEVICES "Build example multi devices applic
 option(USBIPDCPP_BUILD_EXAMPLE_ABSOLUTE_MOUSE "Build example absolute mouse applications" ${IS_TOP_LEVEL})
 option(USBIPDCPP_BUILD_EXAMPLE_MOCK_UVC_FFMPEG "Build example mock UVC applications with FFmpeg" ${IS_TOP_LEVEL})
 option(USBIPDCPP_BUILD_EXAMPLE_MULTI_INTERFACE_HID "Build example multi-interface HID (mouse + keyboard) applications" ${IS_TOP_LEVEL})
+
+if (IS_TOP_LEVEL AND WIN32)
+    set(USBIPDCPP_BUILD_EXAMPLE_LIBUSB_WINDOWS_SERVICE_DEFAULT ON)
+else ()
+    set(USBIPDCPP_BUILD_EXAMPLE_LIBUSB_WINDOWS_SERVICE_DEFAULT OFF)
+endif ()
+option(
+        USBIPDCPP_BUILD_EXAMPLE_LIBUSB_WINDOWS_SERVICE
+        "Build example libusb Windows Service applications"
+        ${USBIPDCPP_BUILD_EXAMPLE_LIBUSB_WINDOWS_SERVICE_DEFAULT}
+)
+
 option(USBIPDCPP_BUILD_VIRTUAL_DEVICE "Build virtual device component" ON)
 option(USBIPDCPP_BUILD_LIBUSB_COMPONENTS "Build libusb component" ON)
 option(USBIPDCPP_BUILD_TESTS "Build tests" ${IS_TOP_LEVEL})
@@ -93,15 +105,15 @@ else ()
     )
 endif ()
 
-file(GLOB BASE_SRC_FILES src/*.cpp)
-file(GLOB UTILS_SRC_FILES src/utils/*.cpp)
-file(GLOB DEVICE_HANDLER_SRC_FILES src/DeviceHandler/*.cpp)
-file(GLOB INTERFACE_HANDLER_SRC_FILES src/InterfaceHandler/*.cpp)
-file(GLOB VIRTUAL_DEVICE_SRC_FILES src/virtual_device/*.cpp)
-file(GLOB VIRTUAL_DEVICE_DEVICES_SRC_FILES src/virtual_device/devices/*.cpp)
-file(GLOB VIRTUAL_DEVICE_STORAGE_BACKENDS_SRC_FILES src/virtual_device/storage_backends/*.cpp)
-file(GLOB VIRTUAL_DEVICE_VIDEO_SOURCES_SRC_FILES src/virtual_device/video_sources/*.cpp)
-file(GLOB LIBUSB_SRC_FILES src/LibusbHandler/*.cpp)
+file(GLOB BASE_SRC_FILES CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB UTILS_SRC_FILES CONFIGURE_DEPENDS src/utils/*.cpp)
+file(GLOB DEVICE_HANDLER_SRC_FILES CONFIGURE_DEPENDS src/DeviceHandler/*.cpp)
+file(GLOB INTERFACE_HANDLER_SRC_FILES CONFIGURE_DEPENDS src/InterfaceHandler/*.cpp)
+file(GLOB VIRTUAL_DEVICE_SRC_FILES CONFIGURE_DEPENDS src/virtual_device/*.cpp)
+file(GLOB VIRTUAL_DEVICE_DEVICES_SRC_FILES CONFIGURE_DEPENDS src/virtual_device/devices/*.cpp)
+file(GLOB VIRTUAL_DEVICE_STORAGE_BACKENDS_SRC_FILES CONFIGURE_DEPENDS src/virtual_device/storage_backends/*.cpp)
+file(GLOB VIRTUAL_DEVICE_VIDEO_SOURCES_SRC_FILES CONFIGURE_DEPENDS src/virtual_device/video_sources/*.cpp)
+file(GLOB LIBUSB_SRC_FILES CONFIGURE_DEPENDS src/LibusbHandler/*.cpp)
 
 # 核心库（不含虚拟设备）
 set(LIB_TYPE STATIC)
@@ -139,7 +151,7 @@ if(USBIPDCPP_BUILD_VIRTUAL_DEVICE)
     add_library(${PROJECT_NAME}_virtual_device ${LIB_TYPE} ${VIRTUAL_DEVICE_SRC_FILES} ${VIRTUAL_DEVICE_DEVICES_SRC_FILES} ${VIRTUAL_DEVICE_STORAGE_BACKENDS_SRC_FILES} ${VIRTUAL_DEVICE_VIDEO_SOURCES_SRC_FILES})
     set_target_properties(${PROJECT_NAME}_virtual_device PROPERTIES EXPORT_NAME virtual_device)
     target_link_libraries(${PROJECT_NAME}_virtual_device PUBLIC ${PROJECT_NAME})
-    target_include_directories(${PROJECT_NAME}_virtual_device PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+    target_include_directories(${PROJECT_NAME}_virtual_device PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 endif()
 
 if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
@@ -255,10 +267,15 @@ if (IS_TOP_LEVEL)
     )
 
     if(WIN32)
-        # 安装编译输出中所有 DLL（含 vcpkg 依赖）到 bin 目录
-        # 用双引号：CMAKE_INSTALL_BINDIR 在配置期展开，CMAKE_INSTALL_PREFIX 在安装期展开
+        # 安装构建目录中 DLL（含 vcpkg 依赖）到 bin 目录
+        # 双引号块内 CMAKE_INSTALL_BINDIR 在配置期展开，其余变量安装期展开
         install(CODE "
-            file(GLOB_RECURSE dlls \"${CMAKE_BINARY_DIR}/*.dll\")
+            # 多配置生成器（VS）DLL 在 build/<Config>/ 下，单配置生成器在 build/ 根目录
+            if(CMAKE_CONFIGURATION_TYPES)
+                file(GLOB dlls \"${CMAKE_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/*.dll\")
+            else()
+                file(GLOB dlls \"${CMAKE_BINARY_DIR}/*.dll\")
+            endif()
             if(dlls)
                 list(FILTER dlls EXCLUDE REGEX \"/usbipdcpp[^/]*\\\\.dll$\")
                 if(dlls)

@@ -1,5 +1,6 @@
 #include "usbipdcpp/LibusbHandler/LibusbDeviceHandler.h"
 
+#include <spdlog/spdlog.h>
 
 #include "usbipdcpp/Endpoint.h"
 #include "usbipdcpp/LibusbHandler/LibusbTransferOperator.h"
@@ -259,8 +260,8 @@ void usbipdcpp::LibusbDeviceHandler::handle_unlink_seqnum(std::uint32_t unlink_s
             cb->unlinking = true;
             cb->unlink_cmd_seqnum = cmd_seqnum;
 
-            lock.unlock();
-
+            // 不在此处释放共享锁：libusb_cancel_transfer 仅设置标志位不调用回调，
+            // 在锁内调用可防止 transfer_callback 拿到排他锁后释放 cb，导致下面 cb 悬空。
             int err = libusb_cancel_transfer(static_cast<libusb_transfer *>(cb->transfer.get()));
             if (err == LIBUSB_ERROR_NOT_FOUND) [[unlikely]] {
                 // transfer 在 libusb 层已完成但回调尚未执行。unlinking 已置位，
@@ -294,8 +295,13 @@ int usbipdcpp::LibusbDeviceHandler::tweak_clear_halt_cmd(const SetupPacket &setu
     else {
         SPDLOG_DEBUG("libusb_clear_halt() done: endp {}", target_endp);
     }
-    return err; // 返回 0 表示成功，正数表示错误
+    // 返回 libusb 错误码（0=成功，负=错误）。
+    // caller 中 tweak_ret < 0 视为"未处理，提交 transfer 让设备自行处理"，
+    // tweak_ret == 0 视为"已处理，无需提交 transfer"。
+    // 因此 tweak 失败时会 fall through 到正常 transfer 提交，作为降级策略。
+    return err;
 }
+
 
 int usbipdcpp::LibusbDeviceHandler::tweak_set_interface_cmd(const SetupPacket &setup_packet) {
     uint16_t alternate = setup_packet.value;
@@ -321,8 +327,13 @@ int usbipdcpp::LibusbDeviceHandler::tweak_set_interface_cmd(const SetupPacket &s
             }
         }
     }
-    return err; // 返回 0 表示成功，正数表示错误
+    // 返回 libusb 错误码（0=成功，负=错误）。
+    // caller 中 tweak_ret < 0 视为"未处理，提交 transfer 让设备自行处理"，
+    // tweak_ret == 0 视为"已处理，无需提交 transfer"。
+    // 因此 tweak 失败时会 fall through 到正常 transfer 提交，作为降级策略。
+    return err;
 }
+
 
 int usbipdcpp::LibusbDeviceHandler::tweak_set_configuration_cmd(const SetupPacket &setup_packet) {
     SPDLOG_INFO("tweak_set_configuration_cmd");
@@ -359,9 +370,8 @@ int usbipdcpp::LibusbDeviceHandler::tweak_reset_device_cmd(const SetupPacket &se
 
 int usbipdcpp::LibusbDeviceHandler::tweak_special_requests(const SetupPacket &setup_packet) {
     // 返回值：
-    // -1: 不需要 tweak，应该提交 transfer
-    //  0: tweak 成功，不需要提交 transfer
-    // >0: tweak 失败（libusb 错误码），不需要提交 transfer
+    // 负数: 未处理（不需要 tweak 或 tweak 执行失败），caller 正常提交 transfer
+    //  0: tweak 已成功处理，无需提交 transfer
     // 特殊请求较少见，大多数情况返回 -1（不需要 tweak）
     if (setup_packet.is_clear_halt_cmd()) [[unlikely]] {
         return tweak_clear_halt_cmd(setup_packet);
@@ -465,12 +475,13 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
         auto *handler = callback_arg.handler;
         handler->transfers_mutex_.lock();
         handler->transfers_.erase(callback_arg.seqnum);
-        handler->pending_count_.fetch_sub(1, std::memory_order_release);
         handler->transfers_mutex_.unlock();
         callback_arg.transfer.reset(); // 释放 libusb_transfer，避免延后到下次 alloc
         if (!handler->callback_args_pool_.free(&callback_arg)) {
             delete &callback_arg;
         }
+        // pending_count_ 在所有清理完成后递减，与正常路径保持一致。
+        handler->pending_count_.fetch_sub(1, std::memory_order_release);
         handler->transfer_complete_cv_.notify_one();
         return;
     }
@@ -481,27 +492,33 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
             /* OK */
             break;
         case LIBUSB_TRANSFER_ERROR:
+            // SHORT_NOT_OK 未设置：调用者接受短包，SHORT_NOT_OK 报告 ERROR 是正常的；
+            //   实际数据已收到，视为完成以正确转发 actual_length。
+            // SHORT_NOT_OK 已设置：调用者明确要求完整长度，这是真正的传输错误。
             if (!(trx->flags & LIBUSB_TRANSFER_SHORT_NOT_OK)) {
-                dev_err(libusb_get_device(trx->dev_handle), "error on endpoint {}", trx->endpoint);
+                trx->status = LIBUSB_TRANSFER_COMPLETED;
             }
             else {
-                // Tweaking status to complete as we received data, but all
-                trx->status = LIBUSB_TRANSFER_COMPLETED;
+                SPDLOG_ERROR("dev {}: error on endpoint {}", get_device_busid(libusb_get_device(trx->dev_handle)),
+                             trx->endpoint);
             }
             break;
         case LIBUSB_TRANSFER_CANCELLED:
-            dev_info(libusb_get_device(trx->dev_handle), "unlinked by a call to usb_unlink_urb()");
+            SPDLOG_INFO("dev {}: unlinked by a call to usb_unlink_urb()",
+                        get_device_busid(libusb_get_device(trx->dev_handle)));
             break;
         case LIBUSB_TRANSFER_STALL:
-            dev_err(libusb_get_device(trx->dev_handle), "endpoint {} is stalled", trx->endpoint);
+            SPDLOG_ERROR("dev {}: endpoint {} is stalled",
+                         get_device_busid(libusb_get_device(trx->dev_handle)), trx->endpoint);
             break;
         case LIBUSB_TRANSFER_NO_DEVICE:
-            dev_info(libusb_get_device(trx->dev_handle), "device removed?");
+            SPDLOG_INFO("dev {}: device removed?", get_device_busid(libusb_get_device(trx->dev_handle)));
             callback_arg.handler->device_removed = true;
             break;
         default:
-            dev_warn(libusb_get_device(trx->dev_handle), "urb completion with unknown status {}",
-                     static_cast<int>(trx->status));
+            SPDLOG_WARN("dev {}: urb completion with unknown status {}",
+                        get_device_busid(libusb_get_device(trx->dev_handle)),
+                        static_cast<int>(trx->status));
             break;
     }
     SPDLOG_DEBUG("libusb传输了{}个字节", trx->actual_length);
@@ -529,7 +546,6 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
         unlinking = callback_arg.unlinking;
         unlink_cmd_seqnum = callback_arg.unlink_cmd_seqnum;
         handler->transfers_.erase(callback_arg.seqnum);
-        handler->pending_count_.fetch_sub(1, std::memory_order_release);
 
         if (unlinking) [[unlikely]] {
             // URB 被 unlink 取消，入队 RET_UNLINK（带实际传输状态码）
@@ -577,6 +593,9 @@ void LIBUSB_CALL usbipdcpp::LibusbDeviceHandler::transfer_callback(libusb_transf
     if (!handler->callback_args_pool_.free(&callback_arg)) {
         delete &callback_arg;
     }
+    // pending_count_ 在完成所有操作后递减，确保 on_disconnection 的 CV 等待
+    // 不会在 callback 仍使用 session/pool 时被唤醒。
+    handler->pending_count_.fetch_sub(1, std::memory_order_release);
     // 无条件通知，覆盖正常路径与 on_disconnection 的竞态。
     // CV 谓词 pending_count_==0 确保只有最后一个 callback 真正唤醒 wait。
     handler->transfer_complete_cv_.notify_one();
@@ -711,25 +730,23 @@ void usbipdcpp::LibusbDeviceHandler::release_and_close_device() {
         return;
     }
 
-    // 获取设备以查询接口数量
-    libusb_device *device = libusb_get_device(native_handle);
-    struct libusb_config_descriptor *active_config_desc = nullptr;
-    int num_interfaces = 0;
-    if (device && libusb_get_active_config_descriptor(device, &active_config_desc) == 0) {
-        num_interfaces = active_config_desc->bNumInterfaces;
-        libusb_free_config_descriptor(active_config_desc);
-    }
+    // 使用绑定时已缓存的接口数量，不要反查 libusb 配置描述符。
+    // 设备物理拔出后 libusb_get_active_config_descriptor 会失败返回 0，
+    // 导致释放循环被跳过，内核驱动永远无法重新挂载。
+    const int num_interfaces = static_cast<int>(handle_device.interfaces.size());
 
     // 释放所有接口
     for (int intf_i = 0; intf_i < num_interfaces; intf_i++) {
         int err = libusb_release_interface(native_handle, intf_i);
-        if (err) {
+        // LIBUSB_ERROR_NO_DEVICE：设备已物理拔出，内核在 handle 关闭时自动重挂载驱动，静默忽略。
+        if (err && err != LIBUSB_ERROR_NO_DEVICE) {
             SPDLOG_ERROR("释放接口 {} 时出错: {}", intf_i, libusb_strerror(err));
         }
 
         // 重新绑定内核驱动
         err = libusb_attach_kernel_driver(native_handle, intf_i);
-        if (err && err != LIBUSB_ERROR_NOT_FOUND && err != LIBUSB_ERROR_NOT_SUPPORTED) {
+        if (err && err != LIBUSB_ERROR_NOT_FOUND && err != LIBUSB_ERROR_NOT_SUPPORTED
+                && err != LIBUSB_ERROR_NO_DEVICE) {
             SPDLOG_WARN("重新绑定内核驱动失败 (接口 {}): {}", intf_i, libusb_strerror(err));
         }
     }

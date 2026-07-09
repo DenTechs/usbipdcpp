@@ -195,6 +195,8 @@ void usbipdcpp::Session::immediately_stop() {
 
     std::error_code ignore_ec;
     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);
+    // 唤醒 sender 线程，否则它卡在 data_available_cv.wait() 上直到 receiver 退出。
+    data_available_cv.notify_one();
     SPDLOG_INFO("成功调用shutdown");
 }
 
@@ -311,11 +313,11 @@ void usbipdcpp::Session::receiver(usbipdcpp::error_code &receiver_ec) {
                         }
                         else {
                             SPDLOG_WARN("找不到端点{}", real_ep);
-                            UsbIpResponse::UsbIpRetSubmit ret_submit =
+                            // 通过 sender 队列发送，避免 receiver 和 sender 两个线程
+                            // 并发写同一 TCP socket 导致数据流损坏。
+                            submit_ret_submit(
                                     UsbIpResponse::UsbIpRetSubmit::create_ret_submit_epipe_without_data(
-                                            cmd2.header.seqnum, 0);
-                            ret_submit.to_socket(socket, ec);
-                            SPDLOG_TRACE("成功发送 UsbIpRetSubmit 包");
+                                            cmd2.header.seqnum, 0));
                         }
                     }
                     else if constexpr (std::is_same_v<UsbIpCommand::UsbIpCmdUnlink, T>) {
@@ -408,7 +410,11 @@ void usbipdcpp::Session::sender(usbipdcpp::error_code &ec) {
                 send_data);
 
         if (sending_ec) {
-            // 直接不处理发送过程中的错误
+            // TCP 写入失败，立即关闭 session 双向通信。
+            // 仅 break 退出 sender 会让 receiver 继续运行直到 keepalive 超时。
+            should_immediately_stop = true;
+            std::error_code ignore_ec;
+            socket.shutdown(asio::ip::tcp::socket::shutdown_both, ignore_ec);
             // ec = sending_ec;
             break;
         }
