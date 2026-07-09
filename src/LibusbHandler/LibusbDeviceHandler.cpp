@@ -260,8 +260,8 @@ void usbipdcpp::LibusbDeviceHandler::handle_unlink_seqnum(std::uint32_t unlink_s
             cb->unlinking = true;
             cb->unlink_cmd_seqnum = cmd_seqnum;
 
-            lock.unlock();
-
+            // 不在此处释放共享锁：libusb_cancel_transfer 仅设置标志位不调用回调，
+            // 在锁内调用可防止 transfer_callback 拿到排他锁后释放 cb，导致下面 cb 悬空。
             int err = libusb_cancel_transfer(static_cast<libusb_transfer *>(cb->transfer.get()));
             if (err == LIBUSB_ERROR_NOT_FOUND) [[unlikely]] {
                 // transfer 在 libusb 层已完成但回调尚未执行。unlinking 已置位，
