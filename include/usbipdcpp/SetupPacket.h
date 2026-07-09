@@ -115,15 +115,15 @@ struct SetupPacket {
                request_type == static_cast<std::uint8_t>(RequestRecipient::Device);
     }
 
-    bool is_out() const {
+    [[nodiscard]] bool is_out() const {
         return !(request_type & 0x80) || !length;
     }
 
-    bool is_in() const {
+    [[nodiscard]] bool is_in() const {
         return !is_out();
     }
 
-    std::uint8_t calc_ep0_address() const {
+    [[nodiscard]] std::uint8_t calc_ep0_address() const {
         if (is_out()) {
             return 0x80;
         }

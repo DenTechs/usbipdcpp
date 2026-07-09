@@ -165,8 +165,7 @@ Example: `mock_uvc` — a 320×240 YUY2 virtual camera with color bar test patte
 
 ### Code Note
 
-> 📝 **Language notice**: Comments/logs primarily use Chinese for efficiency.  
-> The code structure remains clear and approachable. PRs for English translations appreciated!
+> 📝 **Language notice**: Public API documentation (doxygen) and runtime messages are in **English**. Internal implementation comments can be in **Chinese or English** — these are the only two languages used in this project. PRs in other languages will not be accepted.
 
 ### Extending Functionality
 
@@ -295,6 +294,17 @@ This project is ideal for implementing **virtual USB devices** on Windows.
    Use the `USBIPDCPP_LISTEN_PORT` environment variable to specify the listening port.
 
    For the usage of termux-usb, you can refer to the relevant documentation on the official Termux website.
+
+13. multi_interface_hid
+
+   A demonstration of a composite USB device combining **two HID interfaces** (mouse + keyboard) on a single device.
+   Shows how to create multi-interface virtual devices using `SimpleVirtualDeviceHandler`.
+
+14. libusb_windows_service
+
+   A **Windows Service** wrapper for the libusb server (Windows only). Uses the Windows SCM API to run
+   `LibusbServer` as a background service with proper lifecycle management (start/stop via `net start`/`net stop`,
+   or `sc.exe`). Supports automatic binding of all connected USB devices on startup.
 
 ---
 
