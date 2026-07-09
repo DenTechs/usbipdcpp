@@ -21,27 +21,27 @@ jobs:
       matrix:
         include:
           # ======== Linux (gcc) : VIRTUAL_DEVICE × LIBUSB × SHARED 全排列 (8) ========
-          - { name: linux-gcc  vdev+libusb+shared, os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: ON,  shared: ON  }
+          - { name: linux-gcc  vdev+libusb+shared, os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: ON,  shared: ON }
           - { name: linux-gcc  vdev+libusb static,  os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: ON,  shared: OFF }
-          - { name: linux-gcc  vdev shared,         os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: OFF, shared: ON  }
+          - { name: linux-gcc  vdev shared,         os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: OFF, shared: ON }
           - { name: linux-gcc  vdev static,         os: ubuntu-24.04, cpp: g++,    vdev: ON,  libusb: OFF, shared: OFF }
-          - { name: linux-gcc  libusb+shared,       os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: ON,  shared: ON  }
+          - { name: linux-gcc  libusb+shared,       os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: ON,  shared: ON }
           - { name: linux-gcc  libusb static,       os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: ON,  shared: OFF }
-          - { name: linux-gcc  shared only,         os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: OFF, shared: ON  }
+          - { name: linux-gcc  shared only,         os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: OFF, shared: ON }
           - { name: linux-gcc  static only,         os: ubuntu-24.04, cpp: g++,    vdev: OFF, libusb: OFF, shared: OFF }
           # ======== macOS (clang) : VIRTUAL_DEVICE × LIBUSB × SHARED 全排列 (8) ========
-          - { name: macos-clang  vdev+libusb+shared, os: macos-latest, cpp: clang++, vdev: ON,  libusb: ON,  shared: ON  }
+          - { name: macos-clang  vdev+libusb+shared, os: macos-latest, cpp: clang++, vdev: ON,  libusb: ON,  shared: ON }
           - { name: macos-clang  vdev+libusb static,  os: macos-latest, cpp: clang++, vdev: ON,  libusb: ON,  shared: OFF }
-          - { name: macos-clang  vdev shared,         os: macos-latest, cpp: clang++, vdev: ON,  libusb: OFF, shared: ON  }
+          - { name: macos-clang  vdev shared,         os: macos-latest, cpp: clang++, vdev: ON,  libusb: OFF, shared: ON }
           - { name: macos-clang  vdev static,         os: macos-latest, cpp: clang++, vdev: ON,  libusb: OFF, shared: OFF }
-          - { name: macos-clang  libusb+shared,       os: macos-latest, cpp: clang++, vdev: OFF, libusb: ON,  shared: ON  }
+          - { name: macos-clang  libusb+shared,       os: macos-latest, cpp: clang++, vdev: OFF, libusb: ON,  shared: ON }
           - { name: macos-clang  libusb static,       os: macos-latest, cpp: clang++, vdev: OFF, libusb: ON,  shared: OFF }
-          - { name: macos-clang  shared only,         os: macos-latest, cpp: clang++, vdev: OFF, libusb: OFF, shared: ON  }
+          - { name: macos-clang  shared only,         os: macos-latest, cpp: clang++, vdev: OFF, libusb: OFF, shared: ON }
           - { name: macos-clang  static only,         os: macos-latest, cpp: clang++, vdev: OFF, libusb: OFF, shared: OFF }
           # ======== Windows (msvc) : VIRTUAL_DEVICE × SHARED (libusb 不开，runner 无 libusb) (4) ========
-          - { name: win-msvc  vdev+shared,          os: windows-latest, cpp: cl,    vdev: ON,  libusb: OFF, shared: ON  }
+          - { name: win-msvc  vdev+shared,          os: windows-latest, cpp: cl,    vdev: ON,  libusb: OFF, shared: ON }
           - { name: win-msvc  vdev static,          os: windows-latest, cpp: cl,    vdev: ON,  libusb: OFF, shared: OFF }
-          - { name: win-msvc  shared only,          os: windows-latest, cpp: cl,    vdev: OFF, libusb: OFF, shared: ON  }
+          - { name: win-msvc  shared only,          os: windows-latest, cpp: cl,    vdev: OFF, libusb: OFF, shared: ON }
           - { name: win-msvc  static only,          os: windows-latest, cpp: cl,    vdev: OFF, libusb: OFF, shared: OFF }
 
     steps:

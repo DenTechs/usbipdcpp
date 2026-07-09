@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: linux-x64,      os: ubuntu-24.04        }
-          - { name: linux-aarch64,  os: ubuntu-24.04-arm    }
-          - { name: macos-arm64,    os: macos-latest       }
-          - { name: win-x64,        os: windows-latest     }
+          - { name: linux-x64,      os: ubuntu-24.04 }
+          - { name: linux-aarch64,  os: ubuntu-24.04-arm }
+          - { name: macos-arm64,    os: macos-latest }
+          - { name: win-x64,        os: windows-latest }
 
     steps:
       - uses: actions/checkout@v4
@@ -137,9 +137,62 @@ jobs:
           [ -n "$FFMPEG_DIR" ] && cp "$FFMPEG_DIR"/bin/*.dll "out/${DIRNAME}/bin/"
           echo "dirname=${DIRNAME}" >> $GITHUB_ENV
 
-      # ======== 上传为 workflow artifact ========
+      - name: Verify installed DLLs (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          DIRNAME="usbipdcpp-$(git rev-parse --short HEAD)-${{ matrix.name }}"
+          curl -sL "https://github.com/marcoesposito1988/dependency_runner/releases/download/v1.5.0/wldd-x86_64-pc-windows-msvc.zip" -o wldd.zip
+          unzip -q wldd.zip
+          find "out/${DIRNAME}/bin" -type f \( -name "*.dll" -o -name "*.exe" \) -print0 > /tmp/files.txt
+          while IFS= read -r -d '' file; do
+            echo "--- $(basename "$file") ---"
+            ./wldd.exe "$file" 2>&1
+          done < /tmp/files.txt > /tmp/wldd_out.txt
+          if grep -qiE "(not found|missing|could not)" /tmp/wldd_out.txt; then
+            echo "存在未解析的 DLL 依赖！"
+            grep -iE "(not found|missing|could not)" /tmp/wldd_out.txt
+            exit 1
+          fi
+          echo "所有 DLL 依赖验证通过"
+
+      # ======== 上传构建产物 ========
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: out
+          path: out/*/bin/*
+          if-no-files-found: error
+
+  # 等待所有平台构建成功后统一打包
+  package:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package
+        shell: bash
+        run: |
+          set -e
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          for platform_dir in artifacts/*/; do
+            platform=$(basename "$platform_dir")
+            DIRNAME="usbipdcpp-${SHORT_SHA}-${platform}"
+            mkdir -p "${DIRNAME}/bin"
+            cp "${platform_dir}"* "${DIRNAME}/bin/" 2>/dev/null || true
+            tar czf "${DIRNAME}.tar.gz" "${DIRNAME}"
+            echo "Created ${DIRNAME}.tar.gz"
+          done
+          ls -la *.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: "*.tar.gz"
+          if-no-files-found: error

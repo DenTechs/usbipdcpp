@@ -73,18 +73,17 @@ option(USBIPDCPP_INSTALL_EXAMPLES "Install example executables" OFF)
 option(USBIPDCPP_FORCE_TRACK_PACKAGE "Force to track package even in Release build" OFF)
 option(USBIPDCPP_USE_PKGCONF_ASIO "Use pkgconf to find asio instead of find_package" OFF)
 
-if(USBIPDCPP_USE_PKGCONF_ASIO)
+if (USBIPDCPP_USE_PKGCONF_ASIO)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(asio REQUIRED IMPORTED_TARGET asio)
-else()
+else ()
     find_package(asio CONFIG REQUIRED)
-endif()
+endif ()
 find_package(spdlog CONFIG REQUIRED)
 
 if (MSVC)
     add_compile_options("/Zc:preprocessor")
 endif ()
-
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -94,7 +93,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_definitions(
-#            SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG
+            #            SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG
             SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO
             NDEBUG
     )
@@ -117,42 +116,42 @@ file(GLOB LIBUSB_SRC_FILES CONFIGURE_DEPENDS src/LibusbHandler/*.cpp)
 
 # 核心库（不含虚拟设备）
 set(LIB_TYPE STATIC)
-if(USBIPDCPP_BUILD_SHARED_LIBS)
+if (USBIPDCPP_BUILD_SHARED_LIBS)
     set(LIB_TYPE SHARED)
     set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
-    if(APPLE)
+    if (APPLE)
         set(CMAKE_BUILD_RPATH "@loader_path;${CMAKE_INSTALL_FULL_LIBDIR}")
         set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_FULL_LIBDIR}")
-    else()
+    else ()
         set(CMAKE_BUILD_RPATH "$ORIGIN;${CMAKE_INSTALL_FULL_LIBDIR}")
         set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_FULL_LIBDIR}")
-    endif()
+    endif ()
     add_compile_definitions(USBIPDCPP_EXPORTS)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         set(CMAKE_CXX_VISIBILITY_PRESET hidden)
         set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-    endif()
-endif()
+    endif ()
+endif ()
 add_library(${PROJECT_NAME} ${LIB_TYPE} ${BASE_SRC_FILES} ${UTILS_SRC_FILES} ${DEVICE_HANDLER_SRC_FILES} ${INTERFACE_HANDLER_SRC_FILES})
-if(USBIPDCPP_USE_PKGCONF_ASIO)
+if (USBIPDCPP_USE_PKGCONF_ASIO)
     target_link_libraries(${PROJECT_NAME} PUBLIC PkgConfig::asio)
-else()
+else ()
     target_link_libraries(${PROJECT_NAME} PUBLIC asio::asio)
-endif()
+endif ()
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-if(USBIPDCPP_FORCE_TRACK_PACKAGE)
+if (USBIPDCPP_FORCE_TRACK_PACKAGE)
     message(STATUS "USBIPDCPP: Force tracking package")
     target_compile_definitions(${PROJECT_NAME} PUBLIC USBIPDCPP_FORCE_TRACK_PACKAGE)
-endif()
+endif ()
 
 # 虚拟设备库
-if(USBIPDCPP_BUILD_VIRTUAL_DEVICE)
+if (USBIPDCPP_BUILD_VIRTUAL_DEVICE)
     add_library(${PROJECT_NAME}_virtual_device ${LIB_TYPE} ${VIRTUAL_DEVICE_SRC_FILES} ${VIRTUAL_DEVICE_DEVICES_SRC_FILES} ${VIRTUAL_DEVICE_STORAGE_BACKENDS_SRC_FILES} ${VIRTUAL_DEVICE_VIDEO_SOURCES_SRC_FILES})
     set_target_properties(${PROJECT_NAME}_virtual_device PROPERTIES EXPORT_NAME virtual_device)
     target_link_libraries(${PROJECT_NAME}_virtual_device PUBLIC ${PROJECT_NAME})
     target_include_directories(${PROJECT_NAME}_virtual_device PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-endif()
+endif ()
 
 if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
     find_package(PkgConfig REQUIRED)
@@ -193,23 +192,23 @@ if (IS_TOP_LEVEL)
     )
 
     # 安装头文件
-    if(USBIPDCPP_BUILD_VIRTUAL_DEVICE)
+    if (USBIPDCPP_BUILD_VIRTUAL_DEVICE)
         if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
             install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
-        else()
+        else ()
             install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "LibusbHandler" EXCLUDE)
-        endif()
-    else()
+        endif ()
+    else ()
         if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS)
             install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "virtual_device" EXCLUDE)
-        else()
+        else ()
             install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
                     PATTERN "virtual_device" EXCLUDE
                     PATTERN "LibusbHandler" EXCLUDE)
-        endif()
-    endif()
+        endif ()
+    endif ()
 
 
     install(EXPORT ${PROJECT_NAME}Targets
@@ -266,22 +265,21 @@ if (IS_TOP_LEVEL)
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
     )
 
-    if(WIN32)
-        # 安装构建目录中 DLL（含 vcpkg 依赖）到 bin 目录
-        # 双引号块内 CMAKE_INSTALL_BINDIR 在配置期展开，其余变量安装期展开
+    if (WIN32)
+        # 安装构建目录中 vcpkg 依赖 DLL 到 bin 目录
+        # CMAKE_INSTALL_CONFIG_NAME 在 install(CODE) 脚本模式下会设置，
+        # 但 CMAKE_CONFIGURATION_TYPES 不会。同时 glob 根目录和配置子目录，
+        # 兼容单配置生成器（Ninja，DLL 在 build/）和多配置生成器（VS，DLL 在 build/<Config>/）
         install(CODE "
-            # 多配置生成器（VS）DLL 在 build/<Config>/ 下，单配置生成器在 build/ 根目录
-            if(CMAKE_CONFIGURATION_TYPES)
-                file(GLOB dlls \"${CMAKE_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/*.dll\")
-            else()
-                file(GLOB dlls \"${CMAKE_BINARY_DIR}/*.dll\")
-            endif()
+            file(GLOB dlls
+                \"${CMAKE_BINARY_DIR}/*.dll\"
+                \"${CMAKE_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/*.dll\")
             if(dlls)
-                list(FILTER dlls EXCLUDE REGEX \"/usbipdcpp[^/]*\\\\.dll$\")
+                list(FILTER dlls EXCLUDE REGEX \".*[/\\\\\\\\]usbipdcpp[^/\\\\\\\\]*\\\\.dll$\")
                 if(dlls)
                     file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\" FILES \${dlls})
                 endif()
             endif()
         ")
-    endif()
+    endif ()
 endif ()

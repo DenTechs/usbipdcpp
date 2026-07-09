@@ -6,7 +6,7 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 permissions:
@@ -21,10 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: linux-x64,      os: ubuntu-24.04        }
-          - { name: linux-aarch64,  os: ubuntu-24.04-arm    }
-          - { name: macos-arm64,    os: macos-latest       }
-          - { name: win-x64,        os: windows-latest     }
+          - { name: linux-x64,      os: ubuntu-24.04 }
+          - { name: linux-aarch64,  os: ubuntu-24.04-arm }
+          - { name: macos-arm64,    os: macos-latest }
+          - { name: win-x64,        os: windows-latest }
 
     steps:
       - uses: actions/checkout@v4
@@ -147,6 +147,32 @@ jobs:
           tar czf "${DIRNAME}.tar.gz" "${DIRNAME}"
           echo "archive=${DIRNAME}.tar.gz" >> $GITHUB_ENV
 
+      - name: Verify installed DLLs (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          DIRNAME="usbipdcpp-${VERSION}-${{ matrix.name }}"
+
+          # 下载 wldd（Windows 上的 ldd 等价工具）
+          curl -sL "https://github.com/marcoesposito1988/dependency_runner/releases/download/v1.5.0/wldd-x86_64-pc-windows-msvc.zip" -o wldd.zip
+          unzip -q wldd.zip
+
+          # 验证安装目录中每个 DLL 和 exe 的依赖是否完整
+          echo "=== 检查已安装 DLL 的依赖完整性 ==="
+          find "${DIRNAME}/bin" -type f \( -name "*.dll" -o -name "*.exe" \) -print0 > /tmp/files.txt
+          while IFS= read -r -d '' file; do
+            echo "--- $(basename "$file") ---"
+            ./wldd.exe "$file" 2>&1
+          done < /tmp/files.txt > /tmp/wldd_out.txt
+          if grep -qiE "(not found|missing|could not)" /tmp/wldd_out.txt; then
+            echo "存在未解析的 DLL 依赖！"
+            grep -iE "(not found|missing|could not)" /tmp/wldd_out.txt
+            exit 1
+          fi
+          echo "所有 DLL 依赖验证通过"
+
       # ======== 上传 artifact（所有平台建完后统一发到 Release） ========
 
       - name: Upload artifact
@@ -158,7 +184,7 @@ jobs:
 
   # 等待所有平台都成功后再统一上传到 Release
   release-upload:
-    needs: [release]
+    needs: [ release ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
