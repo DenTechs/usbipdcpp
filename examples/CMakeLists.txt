@@ -47,6 +47,11 @@ else ()
     message(WARNING "cxxopts not found, skipping all examples that need it")
 endif ()
 
+# Windows Service 示例（仅 Windows），不需要 cxxopts
+if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS AND USBIPDCPP_BUILD_EXAMPLE_LIBUSB_WINDOWS_SERVICE)
+    add_subdirectory(libusb_windows_service)
+endif ()
+
 # termux 由 termux-usb 程序调用，参数固定(argc=2, argv[1]=fd)，不需要 cxxopts
 if (USBIPDCPP_BUILD_LIBUSB_COMPONENTS AND USBIPDCPP_BUILD_EXAMPLE_TERMUX_LIBUSB_SERVER)
     add_subdirectory(termux_libusb_server)
@@ -92,5 +97,8 @@ if(USBIPDCPP_INSTALL_EXAMPLES)
     endif()
     if(TARGET termux_libusb_server)
         install(TARGETS termux_libusb_server RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+    if(TARGET libusb_windows_service)
+        install(TARGETS libusb_windows_service RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
 endif()
