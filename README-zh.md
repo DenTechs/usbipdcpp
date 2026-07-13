@@ -297,8 +297,24 @@ interface_handler->change_string_interface(L"我的 HID 接口");
 
 11. termux_libusb_server
 
-   可在非root安卓设备的termux中使用的libusb server，通过
-   `termux-usb -e /path/to/termux_libusb_server /dev/bus/usb/xxx/xxx`启动。
+   可在非 root 安卓设备的 Termux 中使用的 USB/IP server。预编译的 ARM64 包名为
+   `android-arm64`；`linux-aarch64` 使用 glibc，不能在安卓上运行。
+
+   请从与 Termux 相同的来源安装 Termux:API 配套应用，然后在 Termux 中安装命令行客户端：
+
+   ```bash
+   pkg update
+   pkg install termux-api
+   ```
+
+   解压下载的包，并为指定 USB 设备启动 server：
+
+   ```bash
+   tar xzf usbipdcpp-*-android-arm64.tar.gz
+   cd usbipdcpp-*-android-arm64
+   chmod +x bin/termux_libusb_server
+   termux-usb -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
+   ```
 
    由于termux-usb只支持传入一个fd，因此可使用不同端口启动多个服务器以支持多个设备。
    使用`USBIPDCPP_LISTEN_PORT`环境变量来指定监听端口

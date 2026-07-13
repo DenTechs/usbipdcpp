@@ -287,8 +287,24 @@ This project is ideal for implementing **virtual USB devices** on Windows.
 
 12. termux_libusb_server
 
-   A usbip server which can be used at termux in non-root Android device, execute it by
-   `termux-usb -e /path/to/termux_libusb_server /dev/bus/usb/xxx/xxx`
+   A USB/IP server for non-root Android devices running Termux. Pre-built ARM64 packages are available as
+   `android-arm64` artifacts; the `linux-aarch64` package uses glibc and cannot run on Android.
+
+   Install the Termux:API companion app from the same source as Termux, then install its command-line client:
+
+   ```bash
+   pkg update
+   pkg install termux-api
+   ```
+
+   Extract the downloaded package and start the server for a USB device:
+
+   ```bash
+   tar xzf usbipdcpp-*-android-arm64.tar.gz
+   cd usbipdcpp-*-android-arm64
+   chmod +x bin/termux_libusb_server
+   termux-usb -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
+   ```
 
    Since termux-usb only supports passing in one fd, multiple servers can be started on different ports to support multiple devices.
    Use the `USBIPDCPP_LISTEN_PORT` environment variable to specify the listening port.
@@ -312,14 +328,17 @@ This project is ideal for implementing **virtual USB devices** on Windows.
 
 Pre-built packages for each platform are available on the [Releases](https://github.com/yunsmall/usbipdcpp/releases) page when a version tag is pushed.
 
+For ARM64 Android phones, download `usbipdcpp-<version>-android-arm64.tar.gz`. Do not use
+`linux-aarch64`, which targets standard Linux rather than Android's Bionic runtime. The Android package targets
+Android 7.0 (API 24) or newer and contains a self-contained `termux_libusb_server` executable.
+
 If you need a package without waiting for a release, or want to build from a specific commit:
 
 1. **Fork** this repository
 2. Go to the **Actions** tab in your fork → select **"Build packages (manual)"** → **"Run workflow"**
-3. After the workflow completes, download the artifacts for your platform
+3. After the workflow completes, download the `packages` artifact and extract the archive for your platform
 
-> ⚠️ The `linux-aarch64` job requires an ARM64 runner, which GitHub provides for free only on **public** repositories.
-> If your fork is private, that job will be skipped; the other three platforms will still build.
+The `android-arm64` package is cross-compiled on an x64 runner and does not require a self-hosted Android or ARM64 runner.
 
 ---
 
@@ -474,4 +493,4 @@ For closed-source or proprietary use, please contact: yun_small@163.com
 This project builds upon these foundational works:
 
 - [usbipd-libusb](https://github.com/raydudu/usbipd-libusb)
-- [usbip](https://github.com/jiegec/usbip)  
+- [usbip](https://github.com/jiegec/usbip)
