@@ -47,7 +47,7 @@ jobs:
         if: matrix.name == 'android-arm64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool pkg-config ninja-build
+          sudo apt-get install -y autoconf autoconf-archive automake libtool pkg-config ninja-build
           yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${TERMUX_NDK_VERSION}" >/dev/null
           echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"

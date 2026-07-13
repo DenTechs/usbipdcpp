@@ -1,0 +1,113 @@
+# Manually cross-compile the Termux USB/IP server without running the desktop package matrix.
+
+name: Build Termux package (manual)
+
+on:
+  workflow_dispatch:
+
+env:
+  TERMUX_NDK_VERSION: "29.0.14206865"
+  TERMUX_VCPKG_VERSION: "2026.04.27"
+  VCPKG_DISABLE_METRICS: "1"
+  VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-binary-cache,readwrite"
+
+jobs:
+  build-termux:
+    name: android-arm64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Android build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf autoconf-archive automake libtool pkg-config ninja-build
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${TERMUX_NDK_VERSION}" >/dev/null
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Checkout pinned vcpkg
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ env.TERMUX_VCPKG_VERSION }}
+          path: .vcpkg-ci
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v4
+        with:
+          path: .vcpkg-binary-cache
+          key: termux-arm64-vcpkg-${{ env.TERMUX_VCPKG_VERSION }}-${{ hashFiles('cmake/triplets/arm64-android-termux.cmake') }}
+
+      - name: Build Android dependencies
+        shell: bash
+        run: |
+          mkdir -p .vcpkg-binary-cache
+          ./.vcpkg-ci/bootstrap-vcpkg.sh -disableMetrics
+          ./.vcpkg-ci/vcpkg install asio spdlog libusb \
+            --triplet arm64-android-termux \
+            --overlay-triplets="${GITHUB_WORKSPACE}/cmake/triplets"
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -G Ninja -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="${GITHUB_WORKSPACE}/.vcpkg-ci/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake" \
+            -DVCPKG_TARGET_TRIPLET=arm64-android-termux \
+            -DVCPKG_OVERLAY_TRIPLETS="${GITHUB_WORKSPACE}/cmake/triplets" \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-24 \
+            -DANDROID_STL=c++_static \
+            -DUSBIPDCPP_BUILD_SHARED_LIBS=OFF \
+            -DUSBIPDCPP_BUILD_VIRTUAL_DEVICE=OFF \
+            -DUSBIPDCPP_BUILD_LIBUSB_COMPONENTS=ON \
+            -DUSBIPDCPP_BUILD_EXAMPLES=ON \
+            -DUSBIPDCPP_BUILD_EXAMPLE_LIBUSB_SERVER=OFF \
+            -DUSBIPDCPP_BUILD_EXAMPLE_TERMUX_LIBUSB_SERVER=ON \
+            -DUSBIPDCPP_BUILD_TESTS=OFF \
+            -DUSBIPDCPP_BUILD_PYTHON_BINDINGS=OFF \
+            -DUSBIPDCPP_INSTALL_EXAMPLES=ON \
+            -S "${GITHUB_WORKSPACE}"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Verify Android executable
+        shell: bash
+        run: |
+          BIN="build/termux_libusb_server"
+          READELF="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          test -x "$BIN"
+          file "$BIN"
+          "$READELF" -h "$BIN" | tee /tmp/termux-elf-header.txt
+          grep -Eq 'Type:.*DYN' /tmp/termux-elf-header.txt
+          grep -Eq 'Machine:.*AArch64' /tmp/termux-elf-header.txt
+          "$READELF" -l "$BIN" | tee /tmp/termux-elf-program.txt
+          grep -q '/system/bin/linker64' /tmp/termux-elf-program.txt
+          "$READELF" -d "$BIN" | tee /tmp/termux-elf-dynamic.txt
+          if grep -Eq 'lib(c\+\+_shared|usb|spdlog|fmt|usbipdcpp).*\.so' /tmp/termux-elf-dynamic.txt; then
+            echo "Android package contains an unexpected shared-library dependency"
+            exit 1
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DIRNAME="usbipdcpp-${SHORT_SHA}-android-arm64"
+          cmake --install build --config Release --prefix "${DIRNAME}"
+          cp LICENSE "${DIRNAME}/LICENSE"
+          printf 'Source: %s\nCommit: %s\nAndroid ABI: arm64-v8a\nMinimum API: 24\n' \
+            "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" "${GITHUB_SHA}" > "${DIRNAME}/BUILD_INFO.txt"
+          tar czf "${DIRNAME}.tar.gz" "${DIRNAME}"
+          echo "archive=${DIRNAME}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64
+          path: ${{ env.archive }}
+          if-no-files-found: error

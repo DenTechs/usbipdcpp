@@ -3,11 +3,6 @@
 
 name: Build packages (manual)
 
-env:
-  TERMUX_NDK_VERSION: "29.0.14206865"
-  TERMUX_VCPKG_VERSION: "2026.04.27"
-  VCPKG_DISABLE_METRICS: "1"
-
 on:
   workflow_dispatch:
 
@@ -22,7 +17,6 @@ jobs:
         include:
           - { name: linux-x64,      os: ubuntu-24.04 }
           - { name: linux-aarch64,  os: ubuntu-24.04-arm }
-          - { name: android-arm64,  os: ubuntu-24.04 }
           - { name: macos-arm64,    os: macos-latest }
           - { name: win-x64,        os: windows-latest }
 
@@ -32,36 +26,10 @@ jobs:
       # ======== 依赖 ========
 
       - name: Install dependencies (Linux)
-        if: runner.os == 'Linux' && matrix.name != 'android-arm64'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libasio-dev libspdlog-dev libusb-1.0-0-dev libcxxopts-dev libevdev-dev libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libgtest-dev
-
-      - name: Install Android build tools
-        if: matrix.name == 'android-arm64'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool pkg-config ninja-build
-          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${TERMUX_NDK_VERSION}" >/dev/null
-          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${TERMUX_NDK_VERSION}" >> "$GITHUB_ENV"
-
-      - name: Checkout pinned vcpkg (Android)
-        if: matrix.name == 'android-arm64'
-        uses: actions/checkout@v4
-        with:
-          repository: microsoft/vcpkg
-          ref: ${{ env.TERMUX_VCPKG_VERSION }}
-          path: .vcpkg-ci
-
-      - name: Build Android dependencies
-        if: matrix.name == 'android-arm64'
-        shell: bash
-        run: |
-          ./.vcpkg-ci/bootstrap-vcpkg.sh -disableMetrics
-          ./.vcpkg-ci/vcpkg install asio spdlog libusb \
-            --triplet arm64-android-termux \
-            --overlay-triplets="${GITHUB_WORKSPACE}/cmake/triplets"
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
@@ -96,7 +64,7 @@ jobs:
       # ======== CMake 配置 ========
 
       - name: Configure CMake (Linux)
-        if: runner.os == 'Linux' && matrix.name != 'android-arm64'
+        if: runner.os == 'Linux'
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
@@ -108,30 +76,6 @@ jobs:
             -DUSBIPDCPP_INSTALL_EXAMPLES=ON \
             -DUSBIPDCPP_BUILD_TESTS=ON \
             -S ${{ github.workspace }}
-
-      - name: Configure CMake (Android ARM64)
-        if: matrix.name == 'android-arm64'
-        shell: bash
-        run: |
-          cmake -G Ninja -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="${GITHUB_WORKSPACE}/.vcpkg-ci/scripts/buildsystems/vcpkg.cmake" \
-            -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake" \
-            -DVCPKG_TARGET_TRIPLET=arm64-android-termux \
-            -DVCPKG_OVERLAY_TRIPLETS="${GITHUB_WORKSPACE}/cmake/triplets" \
-            -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-24 \
-            -DANDROID_STL=c++_static \
-            -DUSBIPDCPP_BUILD_SHARED_LIBS=OFF \
-            -DUSBIPDCPP_BUILD_VIRTUAL_DEVICE=OFF \
-            -DUSBIPDCPP_BUILD_LIBUSB_COMPONENTS=ON \
-            -DUSBIPDCPP_BUILD_EXAMPLES=ON \
-            -DUSBIPDCPP_BUILD_EXAMPLE_LIBUSB_SERVER=OFF \
-            -DUSBIPDCPP_BUILD_EXAMPLE_TERMUX_LIBUSB_SERVER=ON \
-            -DUSBIPDCPP_BUILD_TESTS=OFF \
-            -DUSBIPDCPP_BUILD_PYTHON_BINDINGS=OFF \
-            -DUSBIPDCPP_INSTALL_EXAMPLES=ON \
-            -S "${GITHUB_WORKSPACE}"
 
       - name: Configure CMake (macOS)
         if: runner.os == 'macOS'
@@ -180,28 +124,8 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Test
-        if: matrix.name != 'android-arm64'
         working-directory: build
         run: ctest --build-config Release
-
-      - name: Verify Android executable
-        if: matrix.name == 'android-arm64'
-        shell: bash
-        run: |
-          BIN="build/termux_libusb_server"
-          READELF="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
-          test -x "$BIN"
-          file "$BIN"
-          "$READELF" -h "$BIN" | tee /tmp/termux-elf-header.txt
-          grep -Eq 'Type:.*DYN' /tmp/termux-elf-header.txt
-          grep -Eq 'Machine:.*AArch64' /tmp/termux-elf-header.txt
-          "$READELF" -l "$BIN" | tee /tmp/termux-elf-program.txt
-          grep -q '/system/bin/linker64' /tmp/termux-elf-program.txt
-          "$READELF" -d "$BIN" | tee /tmp/termux-elf-dynamic.txt
-          if grep -Eq 'lib(c\+\+_shared|usb|spdlog|fmt|usbipdcpp).*\.so' /tmp/termux-elf-dynamic.txt; then
-            echo "Android package contains an unexpected shared-library dependency"
-            exit 1
-          fi
 
       - name: Install
         shell: bash
@@ -248,8 +172,6 @@ jobs:
       actions: write
 
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -264,12 +186,6 @@ jobs:
             DIRNAME="usbipdcpp-${SHORT_SHA}-${platform}"
             mkdir -p "${DIRNAME}/bin"
             cp "${platform_dir}"* "${DIRNAME}/bin/" 2>/dev/null || true
-            if [ "$platform" = "android-arm64" ]; then
-              chmod +x "${DIRNAME}/bin/termux_libusb_server"
-              cp LICENSE "${DIRNAME}/LICENSE"
-              printf 'Source: %s\nCommit: %s\nAndroid ABI: arm64-v8a\nMinimum API: 24\n' \
-                "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" "${GITHUB_SHA}" > "${DIRNAME}/BUILD_INFO.txt"
-            fi
             tar czf "${DIRNAME}.tar.gz" "${DIRNAME}"
             echo "Created ${DIRNAME}.tar.gz"
           done

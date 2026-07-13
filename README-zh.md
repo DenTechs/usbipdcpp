@@ -299,6 +299,8 @@ interface_handler->change_string_interface(L"我的 HID 接口");
 
    可在非 root 安卓设备的 Termux 中使用的 USB/IP server。预编译的 ARM64 包名为
    `android-arm64`；`linux-aarch64` 使用 glibc，不能在安卓上运行。
+   如需编译最新提交，请在 GitHub Actions 中单独运行 **Build Termux package (manual)**，然后下载
+   `android-arm64` artifact。该 workflow 只编译 Termux 包，不会运行桌面平台矩阵。
 
    请从与 Termux 相同的来源安装 Termux:API 配套应用，然后在 Termux 中安装命令行客户端：
 

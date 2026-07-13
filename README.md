@@ -289,6 +289,8 @@ This project is ideal for implementing **virtual USB devices** on Windows.
 
    A USB/IP server for non-root Android devices running Termux. Pre-built ARM64 packages are available as
    `android-arm64` artifacts; the `linux-aarch64` package uses glibc and cannot run on Android.
+   To build the latest commit, run **Build Termux package (manual)** from the GitHub Actions tab and download
+   its `android-arm64` artifact. This workflow builds only the Termux package.
 
    Install the Termux:API companion app from the same source as Termux, then install its command-line client:
 
@@ -338,7 +340,8 @@ If you need a package without waiting for a release, or want to build from a spe
 2. Go to the **Actions** tab in your fork → select **"Build packages (manual)"** → **"Run workflow"**
 3. After the workflow completes, download the `packages` artifact and extract the archive for your platform
 
-The `android-arm64` package is cross-compiled on an x64 runner and does not require a self-hosted Android or ARM64 runner.
+For Termux, select **Build Termux package (manual)** instead and download its `android-arm64` artifact. It is
+cross-compiled on an x64 runner and does not run the desktop package matrix.
 
 ---
 
