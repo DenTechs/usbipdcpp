@@ -305,8 +305,11 @@ This project is ideal for implementing **virtual USB devices** on Windows.
    tar xzf usbipdcpp-*-android-arm64.tar.gz
    cd usbipdcpp-*-android-arm64
    chmod +x bin/termux_libusb_server
-   termux-usb -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
+   termux-usb -r -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
    ```
+
+   Unlock the phone and approve the Android USB permission dialog. The `-r` option requests permission when it
+   has not already been granted; `termux-usb -l` only lists devices and does not execute the server.
 
    Since termux-usb only supports passing in one fd, multiple servers can be started on different ports to support multiple devices.
    Use the `USBIPDCPP_LISTEN_PORT` environment variable to specify the listening port.

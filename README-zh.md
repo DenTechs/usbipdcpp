@@ -315,8 +315,11 @@ interface_handler->change_string_interface(L"我的 HID 接口");
    tar xzf usbipdcpp-*-android-arm64.tar.gz
    cd usbipdcpp-*-android-arm64
    chmod +x bin/termux_libusb_server
-   termux-usb -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
+   termux-usb -r -e "$PWD/bin/termux_libusb_server" /dev/bus/usb/xxx/xxx
    ```
+
+   请解锁手机并允许安卓弹出的 USB 权限请求。`-r` 会在尚未授权时请求权限；`termux-usb -l`
+   只会列出设备，不会执行 server。
 
    由于termux-usb只支持传入一个fd，因此可使用不同端口启动多个服务器以支持多个设备。
    使用`USBIPDCPP_LISTEN_PORT`环境变量来指定监听端口
